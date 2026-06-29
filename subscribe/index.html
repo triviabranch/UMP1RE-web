@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Ump1re · Subscribe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/subscribe.css">
+</head>
+<body>
+
+<div class="card">
+  <img class="brand-logo" src="/assets/logo.png" alt="Ump1re">
+  <h1>Go Courtside</h1>
+  <p class="subtitle">
+    Unlock real-time scoring for every session — push live scores to your court display instantly.
+  </p>
+
+  <ul class="features">
+    <li>Score from your phone, display on the court screen</li>
+    <li>Sets, Americano &amp; Mexicano formats</li>
+    <li>HID clicker / Bluetooth keyboard support</li>
+    <li>Session history saved to your account</li>
+  </ul>
+
+  <div class="spinner" id="spinner"></div>
+  <button class="btn btn-primary" id="subscribe-btn" onclick="startCheckout()">
+    Subscribe Monthly →
+  </button>
+  <div class="status" id="status-text"></div>
+
+  <div class="sign-out-row">
+    Signed in as <span id="user-email"></span> ·
+    <a onclick="signOut()">Sign out</a>
+  </div>
+</div>
+
+<script src="/config"></script>
+
+<script>
+'use strict';
+
+let clerk = null;
+
+function setStatus(msg, isError = false) {
+  const el = document.getElementById('status-text');
+  if (typeof msg === 'string' && msg.includes('<img')) el.innerHTML = msg;
+  else el.textContent = msg;
+  el.className = isError ? 'status error' : 'status';
+}
+
+function setLoading(loading) {
+  document.getElementById('spinner').style.display = loading ? 'block' : 'none';
+  document.getElementById('subscribe-btn').style.display = loading ? 'none' : 'block';
+}
+
+async function getToken() {
+  if (!clerk?.session) return null;
+  return clerk.session.getToken();
+}
+
+async function startCheckout() {
+  setLoading(true);
+  setStatus('Creating checkout session…');
+
+  try {
+    const token = await getToken();
+    if (!token) { setStatus('Please sign in first.', true); setLoading(false); return; }
+
+    const res = await fetch('/api/stripe/checkout', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({}),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setStatus(data.error || 'Something went wrong.', true);
+      setLoading(false);
+      return;
+    }
+
+    if (data.alreadySubscribed) {
+      const params = new URLSearchParams(window.location.search);
+      const courtId = params.get('court') || sessionStorage.getItem('ump1re_court') || '';
+      window.location.replace('/play' + (courtId ? `?court=${courtId}` : ''));
+      return;
+    }
+
+    // Redirect to Stripe Checkout
+    window.location.assign(data.url);
+  } catch (e) {
+    setStatus('Error: ' + e.message, true);
+    setLoading(false);
+  }
+}
+
+async function signOut() {
+  await clerk?.signOut();
+  window.location.replace('/');
+}
+
+async function init() {
+  const publishableKey = window.__UMP1RE?.clerkPublishableKey;
+  if (!publishableKey) {
+    setStatus('The <img class="status-logo" src="/assets/logo.png" alt="Ump1re"> is not configured. Set CLERK_PUBLISHABLE_KEY.', true);
+    return;
+  }
+
+  try {
+    await new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/@clerk/clerk-js@4/dist/clerk.browser.js'; s.setAttribute('data-clerk-publishable-key', publishableKey); s.crossOrigin = 'anonymous'; s.onload = res; s.onerror = () => rej(new Error('Failed to load Clerk script')); document.head.appendChild(s); });
+    clerk = window.Clerk;
+    await clerk.load();
+  } catch (e) {
+    setStatus('Auth error: ' + e.message, true);
+    return;
+  }
+
+  // Stripe parked for testing — redirect everyone back to play
+  const courtId = new URLSearchParams(window.location.search).get('court')
+    || sessionStorage.getItem('ump1re_court') || '';
+  window.location.replace('/play' + (courtId ? `?court=${courtId}` : ''));
+}
+
+init().catch(e => setStatus('Unexpected error: ' + e.message, true));
+</script>
+</body>
+</html>

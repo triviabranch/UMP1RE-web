@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ump1re · Subscribed!</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/success.css">
+</head>
+<body>
+<div>
+  <div class="logo">UMP<span>1</span>RE</div>
+  <div class="check">✓</div>
+  <h1>You're in!</h1>
+  <p>Subscription activated. Head to the court and start scoring.</p>
+  <a class="btn" id="play-link" href="/play">Go Score →</a>
+  <div class="note" id="redirect-note">Redirecting in 5 seconds…</div>
+</div>
+
+<script>
+  // Restore court ID if present in session storage or previous URL
+  const courtId = sessionStorage.getItem('ump1re_court');
+  const target  = '/play' + (courtId ? `?court=${courtId}` : '');
+  document.getElementById('play-link').href = target;
+
+  // Auto-redirect after 5 seconds to give webhook time to propagate
+  setTimeout(() => window.location.replace(target), 5000);
+</script>
+</body>
+</html>
