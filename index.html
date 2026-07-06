@@ -10,72 +10,357 @@
 <meta name="apple-mobile-web-app-title" content="Live scoring">
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/assets/icon-512.png">
-<title>Live scoring for padel clubs and players</title>
-<meta name="description" content="Watch-based match scoring, courtside screens, player history and club event formats for modern padel venues.">
+<title>UMP1RE - Live scoring for padel clubs and players</title>
+<meta name="description" content="Watch-based padel scoring, live courtside screens, match history and club event formats for modern padel venues.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/assets/home.css">
 <script src="/assets/home.js" defer></script>
+<style>
+  body {
+    scroll-padding-top: 5rem;
+  }
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+
+    /* Full-width header while the content remains aligned to the page */
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+    padding-left: max(var(--page-gutter, 1rem), calc((100vw - var(--page-max, 1180px)) / 2));
+    padding-right: max(var(--page-gutter, 1rem), calc((100vw - var(--page-max, 1180px)) / 2));
+
+    /*
+      Do not render the topbar itself as a solid slab.
+      The colour wash is handled by ::before so the bottom can fade away.
+    */
+    background: transparent !important;
+    border-bottom: 0 !important;
+    box-shadow: none !important;
+    overflow: visible;
+    isolation: isolate;
+
+    /* Header now contains logo, audience toggle and CTA */
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: clamp(0.75rem, 2vw, 1.5rem);
+  }
+
+  .topbar::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: -44px;
+    pointer-events: none;
+    background: linear-gradient(
+      to bottom,
+      rgba(36, 38, 46, 1) 0%,
+      rgba(36, 38, 46, 0.96) 50%,
+      rgba(36, 38, 46, 0.62) 78%,
+      rgba(36, 38, 46, 0) 100%
+    );
+  }
+
+  body[data-audience="clubs"] .topbar::before {
+    background: linear-gradient(
+      to bottom,
+      rgba(215, 255, 0, 1) 0%,
+      rgba(215, 255, 0, 0.96) 50%,
+      rgba(215, 255, 0, 0.58) 78%,
+      rgba(215, 255, 0, 0) 100%
+    );
+  }
+
+  .topbar::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -54px;
+    height: 54px;
+    pointer-events: none;
+    z-index: -1;
+    filter: blur(18px);
+    opacity: 0.55;
+    background: linear-gradient(
+      to bottom,
+      rgba(36, 38, 46, 0.55),
+      rgba(36, 38, 46, 0)
+    );
+  }
+
+  body[data-audience="clubs"] .topbar::after {
+    background: linear-gradient(
+      to bottom,
+      rgba(215, 255, 0, 0.55),
+      rgba(215, 255, 0, 0)
+    );
+  }
+
+  .topbar .brand-mark,
+  .topbar .switch-wrap,
+  .topbar .nav {
+    position: relative;
+    z-index: 1;
+  }
+
+  .topbar .switch-wrap {
+    justify-self: center;
+    margin: 0;
+  }
+
+  .topbar .flickswitch {
+    margin: 0 auto;
+  }
+
+  .topbar .nav {
+    justify-self: end;
+  }
+
+  .final-cta .cta-logo {
+    display: block;
+    width: min(180px, 42vw);
+    height: auto;
+    margin: 0 auto 1rem;
+    object-fit: contain;
+  }
+
+  @media (max-width: 760px) {
+    .topbar {
+      grid-template-columns: auto auto;
+      grid-template-areas:
+        "brand nav"
+        "switch switch";
+      row-gap: 0.65rem;
+    }
+
+    .topbar .brand-mark {
+      grid-area: brand;
+    }
+
+    .topbar .nav {
+      grid-area: nav;
+    }
+
+    .topbar .switch-wrap {
+      grid-area: switch;
+      width: 100%;
+    }
+  }
+
+  .wordmark-logo {
+    display: inline-flex;
+    align-items: center;
+    vertical-align: -0.16em;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .wordmark-logo img {
+    display: none;
+    height: 1em;
+    width: auto;
+  }
+
+  .wordmark-logo .wordmark-logo-player {
+    display: block;
+  }
+
+  .wordmark-logo .wordmark-logo-club {
+    display: none;
+  }
+
+  body[data-audience="clubs"] .wordmark-logo .wordmark-logo-player {
+    display: none;
+  }
+
+  body[data-audience="clubs"] .wordmark-logo .wordmark-logo-club {
+    display: block;
+  }
+
+  .lead .wordmark-logo img {
+    height: 1.05em;
+  }
+
+  .button .wordmark-logo img,
+  .plan-feature-title .wordmark-logo img,
+  .plan-feature-detail .wordmark-logo img,
+  .trust-card .wordmark-logo img,
+  .strip-item .wordmark-logo img,
+  .modal-actions .wordmark-logo img,
+  .final-cta .wordmark-logo img {
+    height: 0.95em;
+  }
+
+  h1 .wordmark-logo img,
+  h2 .wordmark-logo img,
+  h3 .wordmark-logo img {
+    height: 0.98em;
+  }
+
+  /* Ensure the main header logo switches correctly on the lime club background */
+  .topbar .logo-player {
+    display: block;
+  }
+
+  .topbar .logo-club {
+    display: none;
+  }
+
+  body[data-audience="clubs"] .topbar .logo-player {
+    display: none !important;
+  }
+
+  body[data-audience="clubs"] .topbar .logo-club {
+    display: block !important;
+  }
+
+  .single-line-heading {
+    white-space: nowrap;
+    text-wrap: nowrap;
+  }
+
+  #player-details .final-cta .section-heading {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    text-align: center;
+  }
+
+  #player-details .final-cta .section-heading > div {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  #player-details .final-cta .single-line-heading {
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    white-space: nowrap;
+    text-wrap: nowrap;
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  @media (max-width: 520px) {
+    .single-line-heading {
+      font-size: clamp(2.1rem, 10vw, 3.4rem);
+      letter-spacing: -0.02em;
+    }
+  }
+
+</style>
 </head>
+
 <body data-audience="players">
   <main class="page" aria-label="Home page">
     <header class="topbar">
       <a class="brand-mark" href="/" aria-label="Home">
-        <img class="logo logo-player" src="/assets/UMP1RE_Logo.svg" alt="Brand logo">
-        <img class="logo logo-club" src="/assets/logo-black.png" alt="Brand logo">
+        <img class="logo logo-player" src="/assets/UMP1RE_Logo.svg" alt="UMP1RE logo">
+        <img class="logo logo-club" src="/assets/logo-black.png" alt="UMP1RE logo">
       </a>
+
+      <div class="switch-wrap">
+            <div class="flickswitch" role="tablist" aria-label="Choose audience">
+              <button class="flickswitch-tab is-active" type="button" data-audience-toggle="players" aria-pressed="true">
+                <span class="flickswitch-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                    <circle cx="12" cy="7.4" r="3.1" fill="none" stroke="currentColor" stroke-width="1.6"></circle>
+                    <path d="M5.8 19.2c0.8-3.4 3-5.1 6.2-5.1s5.4 1.7 6.2 5.1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+                  </svg>
+                </span>
+                <span class="flickswitch-copy">
+                  <span class="flickswitch-label">Players</span>
+                </span>
+              </button>
+      
+              <button class="flickswitch-tab" type="button" data-audience-toggle="clubs" aria-pressed="false">
+                <span class="flickswitch-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                    <path d="M4.8 10.2 12 5l7.2 5.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M6.4 9.8v8.7h11.2V9.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"></path>
+                    <path d="M10 18.5v-4.7h4v4.7M8.5 12h1.7M13.8 12h1.7" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"></path>
+                  </svg>
+                </span>
+                <span class="flickswitch-copy">
+                  <span class="flickswitch-label">Clubs</span>
+                </span>
+              </button>
+            </div>
+          </div>
+
       <nav class="nav" aria-label="Primary navigation">
-        <a class="primary nav-cta" data-audience="players" href="/player">App Store</a>
+        <a class="primary nav-cta" data-audience="players" href="/player">Get the app</a>
         <a class="primary nav-cta" data-audience="clubs" href="/club">Book a demo</a>
       </nav>
     </header>
 
-    <div class="switch-wrap">
-      <div class="flickswitch" role="tablist" aria-label="Choose audience">
-        <button class="flickswitch-tab is-active" type="button" data-audience-toggle="players" aria-pressed="true">
-          <span class="flickswitch-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
-              <circle cx="12" cy="7.4" r="3.1" fill="none" stroke="currentColor" stroke-width="1.6"></circle>
-              <path d="M5.8 19.2c0.8-3.4 3-5.1 6.2-5.1s5.4 1.7 6.2 5.1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
-            </svg>
-          </span>
-          <span class="flickswitch-copy">
-            <span class="flickswitch-label">Players</span>
-          </span>
-        </button>
-        <button class="flickswitch-tab" type="button" data-audience-toggle="clubs" aria-pressed="false">
-          <span class="flickswitch-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
-              <path d="M4.8 10.2 12 5l7.2 5.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
-              <path d="M6.4 9.8v8.7h11.2V9.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"></path>
-              <path d="M10 18.5v-4.7h4v4.7M8.5 12h1.7M13.8 12h1.7" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"></path>
-            </svg>
-          </span>
-          <span class="flickswitch-copy">
-            <span class="flickswitch-label">Clubs</span>
-          </span>
-        </button>
-      </div>
-    </div>
 
     <section class="hero">
       <div class="hero-copy">
-        <h1 data-audience="players"><span class="headline-accent">Score every point</span><span class="headline-main">with your Apple Watch</span></h1>
-        <h1 data-audience="clubs"><span class="headline-main">Make each court</span><span class="headline-accent">work harder for you.</span></h1>
-        <p class="lead" data-audience="players"><span class="inline-logo-mark" role="img" aria-label="Brand logo"><img class="inline-logo inline-logo-player" src="/assets/logo.png" alt=""><img class="inline-logo inline-logo-club" src="/assets/logo-black.png" alt=""></span> makes scoring feel effortless: watch-based input, live court screens and match history that stays with you.</p>
-        <p class="lead" data-audience="clubs"><strong><span class="inline-logo-mark" role="img" aria-label="Brand logo"><img class="inline-logo inline-logo-player" src="/assets/logo.png" alt=""><img class="inline-logo inline-logo-club" src="/assets/logo-black.png" alt=""></span> provides clubs with live courtside scoreboards, sponsor-ready screen space, branded match displays and event scoring — powered by players scoring from their watch.</strong></p>
-       
-    
+        <h1 data-audience="players">
+          <span class="headline-accent">Score from your wrist.</span>
+          <span class="headline-main">For Free.</span>
+        </h1>
+
+        <h1 data-audience="clubs">
+          <span class="headline-main">Turn every court</span>
+          <span class="headline-accent">into a live experience.</span>
+        </h1>
+
+        <p class="lead" data-audience="players">
+          <span class="wordmark-logo" role="img" aria-label="UMP1RE logo"><img class="wordmark-logo-player" src="/assets/UMP1RE_Logo.svg" alt=""><img class="wordmark-logo-club" src="/assets/logo-black.png" alt=""></span>
+          lets players score standard matches from Apple Watch for free, then upgrade for court screens, match history, momentum graphs and shareable match stories.
+        </p>
+
+        <p class="lead" data-audience="clubs">
+          <strong>
+            <span class="inline-logo-mark" role="img" aria-label="UMP1RE logo">
+              <img class="inline-logo inline-logo-player" src="/assets/logo.png" alt="">
+              <img class="inline-logo inline-logo-club" src="/assets/logo-black.png" alt="">
+            </span>
+            gives padel clubs live court scoreboards, branded screen content, sponsor space and event formats — without changing how players book.
+          </strong>
+        </p>
+
         <div class="trust-row" data-audience="players" aria-label="Player highlights">
-          <div class="trust-card"><strong>Easy</strong><span>Score points with a tap.</span></div>
-          <div class="trust-card"><strong>Social</strong><span>Courtside Screens are updated instantly</span></div>
-          <div class="trust-card"><strong>Share</strong><span>Turn the result into something worth sending.</span></div>
+          <div class="trust-card">
+            <strong>Matchplay</strong>
+            <span>Tap through a standard match from your Apple Watch for free.</span>
+          </div>
+          <div class="trust-card">
+            <strong>Unlock the court screen</strong>
+            <span>Upgrade to connect your match to <span class="wordmark-logo" role="img" aria-label="UMP1RE logo"><img class="wordmark-logo-player" src="/assets/UMP1RE_Logo.svg" alt=""><img class="wordmark-logo-club" src="/assets/logo-black.png" alt=""></span> screens at participating clubs.</span>
+          </div>
+          <div class="trust-card">
+            <strong>More than a scoreline</strong>
+            <span>Save the result, track the momentum and share the story after match point.</span>
+          </div>
         </div>
+
         <div class="trust-row" data-audience="clubs" aria-label="Club highlights">
-          <div class="trust-card"><strong>Screens</strong><span>Run a polished scoreboard experience on every court, with media curated for downtime</span></div>
-          <div class="trust-card"><strong>Brand</strong><span>Use sponsor placements and club identity seamlessly.</span></div>
-          <div class="trust-card"><strong>Formats</strong><span>Support for Americano, Mexicano and more.</span></div>
+          <div class="trust-card">
+            <strong>Courts that feel premium</strong>
+            <span>Give every booking a sharper scoreboard experience without changing the booking flow.</span>
+          </div>
+          <div class="trust-card">
+            <strong>Downtime that works</strong>
+            <span>Use idle screens for club news, coaching offers, sponsor media and events.</span>
+          </div>
+          <div class="trust-card">
+            <strong>Formats that run cleaner</strong>
+            <span>Bring Americano, Mexicano and club events onto visible live leaderboards.</span>
+          </div>
         </div>
       </div>
 
@@ -83,20 +368,25 @@
         <div class="watchface-stage">
           <div class="watchface-carousel" data-scoreboard-carousel aria-label="Player watch scoring layouts">
             <div class="carousel-track">
-              <figure class="carousel-slide is-active" data-caption="">
+              <figure class="carousel-slide is-active" data-caption="Free scoring">
                 <img src="/assets/GOLDEN.png" alt="Free app watch scoring screen">
               </figure>
-              <figure class="carousel-slide" data-caption="Paid app">
-                <img src="/assets/GAME.png" alt="Paid app watch scoring screen">
+              <figure class="carousel-slide" data-caption="Premium match view">
+                <img src="/assets/GAME.png" alt="Premium app watch scoring screen">
               </figure>
-              <figure class="carousel-slide" data-caption="Americano app">
+              <figure class="carousel-slide" data-caption="Americano scoring">
                 <img src="/assets/AMERICANOAPP.png" alt="Americano app watch scoring screen">
               </figure>
             </div>
           </div>
         </div>
+
         <div class="hero-actions carousel-actions">
-          <button class="button primary" type="button" data-open-player-modal>The <span class="inline-logo-mark" role="img" aria-label="Brand logo"><img class="inline-logo inline-logo-player" src="/assets/logo-black.png" alt=""></span>App</button>
+          <button class="button primary" type="button" data-open-player-modal>
+            What does the 
+            <span class="wordmark-logo" role="img" aria-label="UMP1RE logo"><img class="wordmark-logo-player" src="/assets/logo-black.png" alt=""><img class="wordmark-logo-club" src="/assets/logo-black.png" alt=""></span>
+            app do?
+          </button>
         </div>
       </aside>
 
@@ -114,21 +404,98 @@
                 <figure class="carousel-slide" data-caption="Wimbledon">
                   <img src="/assets/Wimbledon.png" alt="Wimbledon-style scoreboard layout">
                 </figure>
-                <figure class="carousel-slide" data-caption="Club">
-                  <img src="/assets/CLUBAD.png" alt="Club-style scoreboard layout">
+                <figure class="carousel-slide" data-caption="Club display">
+                  <img src="/assets/CLUBAD.png" alt="Club display layout">
                 </figure>
                 <figure class="carousel-slide" data-caption="Club advertising">
-                  <img src="/assets/CLUBAD2.png" alt="Club advertising scoreboard layout">
+                  <img src="/assets/CLUBAD2.png" alt="Club advertising display layout">
                 </figure>
               </div>
             </div>
           </div>
         </aside>
+
         <div class="hero-actions carousel-actions">
-          <a class="button primary" href="/club">Book a demo</a>
+          <a class="button primary" href="/club">Book a club demo</a>
         </div>
       </div>
-      <div class="plan-table-wrap" data-audience="clubs">
+    </section>
+
+    <section class="section audience-section" id="player-details" data-audience="players" aria-label="Player-focused sections">
+     
+     <section class="final-cta" aria-label="Player call to action">
+
+   
+     
+     <div class="section-heading">
+        <div>
+          <h2 class="single-line-heading">Make your next match count.</h2>
+        </div>
+      </div>
+
+      <div class="strip">
+        <div class="strip-item">
+          <strong>Start scoring free</strong>
+          <span>Use your watch or phone to score a standard match without turning the game into admin.</span>
+        </div>
+        <div class="strip-item">
+          <strong>Built for the wrist</strong>
+          <span>Big tap targets, quick undo and simple controls designed for real play.</span>
+        </div>
+        <div class="strip-item">
+          <strong>Unlock the record</strong>
+          <span>Save named matches, match history, momentum graphs and post-match summaries.</span>
+        </div>
+        <div class="strip-item">
+          <strong>Connect at clubs</strong>
+          <span>At <span class="wordmark-logo" role="img" aria-label="UMP1RE logo"><img class="wordmark-logo-player" src="/assets/UMP1RE_Logo.svg" alt=""><img class="wordmark-logo-club" src="/assets/logo-black.png" alt=""></span> venues, your scoring can power the court screen and club event boards.</span>
+        </div>
+      </div>
+
+      
+
+
+        <p>Score from your wrist for free, then unlock the history, momentum and match stories worth keeping.</p>
+        <div class="hero-actions">
+          <a class="button primary" href="/player">Get the app</a>
+        </div>
+      </section>
+    </section>
+
+    <section class="section audience-section" data-audience="clubs" aria-label="Club-focused sections">
+      <div class="section-heading">
+        <div>
+          <h2>Make your screens part of the club experience.</h2>
+        </div>
+      </div>
+
+      <div class="audience-detail">
+        <article class="audience-card">
+          <div>
+            <h3>Court screens players actually use</h3>
+            <p>Give each court a live scoreboard powered by player scoring, with club-approved layouts, sponsor space and event modes.</p>
+            <ul class="feature-list">
+              <li>Live scoreboards for every court</li>
+              <li>Club branding and approved scoreboard themes</li>
+              <li>Americano, Mexicano and King of the Court displays</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="audience-card">
+          <div>
+            <h3>Venue screens under your control</h3>
+            <p>Use your existing venue screens for promotions, coaching offers, sponsor media and club announcements.</p>
+            <ul class="feature-list">
+              <li>Admin portal for uploading club media</li>
+              <li>Works with your existing HDMI matrix setup</li>
+              <li>Update screen content instantly</li>
+            </ul>
+          </div>
+        </article>
+      </div>
+
+      <div class="plan-table-wrap">
         <table class="plan-table">
           <thead>
             <tr>
@@ -138,88 +505,59 @@
           </thead>
           <tbody>
             <tr>
-              <th scope="row"><span class="plan-feature-title">One screen per court</span><span class="plan-feature-detail">Flexible displays connected to your Wi-Fi.</span></th>
+              <th scope="row">
+                <span class="plan-feature-title">One screen per court</span>
+                <span class="plan-feature-detail">Dedicated court displays connected to your venue Wi-Fi.</span>
+              </th>
               <td><span class="plan-availability is-included" aria-label="Included">✓</span></td>
             </tr>
-            <tr>
-              <th scope="row"><span class="plan-feature-title">Club identity and colorways on each screen</span><span class="plan-feature-detail">Keep court screens aligned with your venue brand.</span></th> 
-              <td><span class="plan-availability is-included" aria-label="Included">✓</span></td>
-            </tr>
-                  <tr>
-              <th scope="row"><span class="plan-feature-title">Customisable Sponsorship Logo per screen</span><span class="plan-feature-detail">Add commercial placements court by court.</span></th>
 
-              <td><span class="plan-availability is-included" aria-label="Included">✓</span></td>
-            </tr>
-                  <tr>
-              <th scope="row"><span class="plan-feature-title">Player selectable views - all pre-approved by you</span><span class="plan-feature-detail">Offer visual options without losing club control.</span></th>
-              <td><span class="plan-availability is-included" aria-label="Included">✓</span></td>
-            </tr>
             <tr>
-              <th scope="row"><span class="plan-feature-title">Customisable idle time media</span><span class="plan-feature-detail">Show sponsor, event and club messaging on unbooked courts.</span></th>
+              <th scope="row">
+                <span class="plan-feature-title">Club-branded scoreboard layouts</span>
+                <span class="plan-feature-detail">Keep every court aligned with your venue identity.</span>
+              </th>
+              <td><span class="plan-availability is-included" aria-label="Included">✓</span></td>
+            </tr>
+
+            <tr>
+              <th scope="row">
+                <span class="plan-feature-title">Court-by-court sponsor placement</span>
+                <span class="plan-feature-detail">Add commercial visibility without interrupting the match display.</span>
+              </th>
+              <td><span class="plan-availability is-included" aria-label="Included">✓</span></td>
+            </tr>
+
+            <tr>
+              <th scope="row">
+                <span class="plan-feature-title">Club-approved player views</span>
+                <span class="plan-feature-detail">Let players choose layouts while the club keeps control.</span>
+              </th>
+              <td><span class="plan-availability is-included" aria-label="Included">✓</span></td>
+            </tr>
+
+            <tr>
+              <th scope="row">
+                <span class="plan-feature-title">Idle screen media</span>
+                <span class="plan-feature-detail">Use unbooked court time for events, offers, coaching and sponsors.</span>
+              </th>
+              <td><span class="plan-availability is-included" aria-label="Included">✓</span></td>
+            </tr>
+
+            <tr>
+              <th scope="row">
+                <span class="plan-feature-title">Venue-wide screen control</span>
+                <span class="plan-feature-detail">Use your existing HDMI matrix to control club-wide media displays.</span>
+              </th>
               <td><span class="plan-availability is-included" aria-label="Included">✓</span></td>
             </tr>
           </tbody>
         </table>
       </div>
-    </section>
-
-    <section class="section audience-section" id="player-details" data-audience="players" aria-label="Player-focused sections">
-      <div class="section-heading">
-        <div>
-          <h2>Designed for fast, frictionless play.</h2>
-        </div>
-      </div>
-      <div class="strip">
-        <div class="strip-item"><strong>Start fast</strong><span>Set up a match in moments and get back to the reason you came to court.</span></div>
-        <div class="strip-item"><strong>Score from wrist</strong><span>Keep points moving with simple watch controls that do not interrupt the rally rhythm.</span></div>
-        <div class="strip-item"><strong>Your history</strong><span>Save named matches, revisit scores and build a record of the sessions that matter.</span></div>
-        <div class="strip-item"><strong>Share the result</strong><span>Turn the final score into something easy to send, compare and remember.</span></div>
-      </div>
-
-      <section class="final-cta" aria-label="Player call to action">
-        <h2>Make the match feel official.</h2>
-        <p>Score from your wrist, keep the result and make every session feel like it belongs in your history.</p>
-        <div class="hero-actions">
-          <a class="button primary" href="/player">App Store</a>
-        </div>
-      </section>
-    </section>
-
-    <section class="section audience-section" data-audience="clubs" aria-label="Club-focused sections">
-      <div class="section-heading">
-        <div>
-          <h2>Designed to elevate your venue.</h2>
-        </div>
-       
-      </div>
-      <div class="audience-detail">
-        <article class="audience-card">
-          <div>
-            <h3>Courtside screens</h3>
-            <p>Turn ordinary courts into live scoring surfaces with screens, club branding, event modes and sponsor opportunity.</p>
-            <ul class="feature-list">
-              <li>Courtside scoreboards for every court</li>
-              <li>Idle screen advertising and sponsor placements</li>
-              <li>Americano, Mexicano and King of the Court support</li>
-            </ul>
-          </div>
-        </article>
-        <article class="audience-card">
-          <div>
-            <h3>Venue Screen Content Control</h3>
-            <p>Leverage your existing screens with rolling advertising, club promotions and content, completely under your control.</p>
-            <ul class="feature-list">
-              <li>Club admin portal to upload your content and Media</li>
-              <li>Plug and Play - Integrates into your existing HDMI matrix setup</li>
-              <li>Instant content updates</li>
-            </ul>
-          </div>
-        </article>
-      </div>
 
       <section class="final-cta" aria-label="Club call to action">
         <div class="hero-actions">
-          <img src="/assets/Logo.png" alt="UMP1RE Logo">
+          <img class="cta-logo" src="/assets/Logo.png" alt="UMP1RE logo">
           <a class="button primary" href="/club">Book a club demo</a>
         </div>
       </section>
@@ -229,95 +567,136 @@
   <div class="modal-shell" data-player-modal hidden>
     <div class="modal-backdrop" data-close-player-modal></div>
     <section class="plan-modal" role="dialog" aria-modal="true" aria-labelledby="player-plan-title" aria-describedby="player-plan-copy" tabindex="-1">
-      <button class="modal-close" type="button" data-close-player-modal aria-label="Close plan comparison">X</button>
+      <button class="modal-close" type="button" data-close-player-modal aria-label="Close app comparison">X</button>
+
       <div class="modal-heading">
         <div class="modal-title-line">
-          <span class="modal-brand-mark" role="img" aria-label="Brand logo">
+          <span class="modal-brand-mark" role="img" aria-label="UMP1RE logo">
             <img class="modal-logo modal-logo-player" src="/assets/UMP1RE_Logo.svg" alt="">
             <img class="modal-logo modal-logo-club" src="/assets/logo-black.png" alt="">
           </span>
-          <h3 id="player-plan-title">App Benefits</h3>
         </div>
-        <p>Subscription required to unlock premium features - £4.99 per month / £39.99 per year</p>
+        <p id="player-plan-copy">Score standard matches for free. </p>
+        <p>Upgrade for screens, history, match reports, momentum graphs and club event features</p> 
+        <p>£3.99/month or £39.99/year.</p>
       </div>
+
       <div class="plan-table-wrap">
         <table class="plan-table">
           <thead>
             <tr>
-              <th scope="col"></th>
+              <th scope="col">Feature</th>
               <th scope="col">Free</th>
-              <th scope="col">Paid</th>
+              <th scope="col">Premium</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <th scope="row"><span class="plan-feature-title">Score a standard match</span><span class="plan-feature-detail"></span></th>
+              <th scope="row">
+                <span class="plan-feature-title">Score a standard match</span>
+                <span class="plan-feature-detail">Basic scoring for everyday padel matches.</span>
+              </th>
               <td><span class="plan-availability is-included" aria-label="Included">✓</span></td>
               <td><span class="plan-availability is-included" aria-label="Included">✓</span></td>
             </tr>
+
             <tr>
-              <th scope="row"><span class="plan-feature-title">Score from phone or watch</span><span class="plan-feature-detail"></span></th>
+              <th scope="row">
+                <span class="plan-feature-title">Score from phone or watch</span>
+                <span class="plan-feature-detail">Use the device that fits the match.</span>
+              </th>
               <td><span class="plan-availability is-included" aria-label="Included">✓</span></td>
               <td><span class="plan-availability is-included" aria-label="Included">✓</span></td>
             </tr>
+
             <tr>
-              <th scope="row"><span class="plan-feature-title">Courtside Screen Integration*</span><span class="plan-feature-detail"></span></th>
+              <th scope="row">
+                <span class="plan-feature-title">Connect to <span class="wordmark-logo" role="img" aria-label="UMP1RE logo"><img class="wordmark-logo-player" src="/assets/UMP1RE_Logo.svg" alt=""><img class="wordmark-logo-club" src="/assets/logo-black.png" alt=""></span> court screens*</span>
+                <span class="plan-feature-detail">Power live courtside scoreboards at <span class="wordmark-logo" role="img" aria-label="UMP1RE logo"><img class="wordmark-logo-player" src="/assets/UMP1RE_Logo.svg" alt=""><img class="wordmark-logo-club" src="/assets/logo-black.png" alt=""></span> clubs.</span>
+              </th>
               <td><span class="plan-availability is-excluded" aria-label="Not included">×</span></td>
               <td><span class="plan-availability is-included" aria-label="Included">✓</span></td>
             </tr>
+
             <tr>
-              <th scope="row"><span class="plan-feature-title">QR or NFC Game Startup flows*</span><span class="plan-feature-detail"></span></th>
+              <th scope="row">
+                <span class="plan-feature-title">QR/NFC court start*</span>
+                <span class="plan-feature-detail">Join a court session quickly at participating venues.</span>
+              </th>
               <td><span class="plan-availability is-excluded" aria-label="Not included">×</span></td>
               <td><span class="plan-availability is-included" aria-label="Included">✓</span></td>
             </tr>
+
             <tr>
-              <th scope="row"><span class="plan-feature-title">Named players and sessions</span><span class="plan-feature-detail"></span></th>
+              <th scope="row">
+                <span class="plan-feature-title">Named players and sessions</span>
+                <span class="plan-feature-detail">Make matches easier to save, find and share.</span>
+              </th>
               <td><span class="plan-availability is-excluded" aria-label="Not included">×</span></td>
               <td><span class="plan-availability is-included" aria-label="Included">✓</span></td>
             </tr>
+
             <tr>
-              <th scope="row"><span class="plan-feature-title">Saved match history</span><span class="plan-feature-detail"></span></th>
+              <th scope="row">
+                <span class="plan-feature-title">Saved match history</span>
+                <span class="plan-feature-detail">Build a record of the matches that matter.</span>
+              </th>
               <td><span class="plan-availability is-excluded" aria-label="Not included">×</span></td>
               <td><span class="plan-availability is-included" aria-label="Included">✓</span></td>
             </tr>
+
             <tr>
-              <th scope="row"><span class="plan-feature-title">AI Generated match reports</span><span class="plan-feature-detail"></span></th>
+              <th scope="row">
+                <span class="plan-feature-title">AI match reports</span>
+                <span class="plan-feature-detail">Turn the scoreline into a readable post-match story.</span>
+              </th>
               <td><span class="plan-availability is-excluded" aria-label="Not included">×</span></td>
               <td><span class="plan-availability is-included" aria-label="Included">✓</span></td>
             </tr>
+
             <tr>
-              <th scope="row"><span class="plan-feature-title">Match Momentum graphs</span><span class="plan-feature-detail"></span></th>
+              <th scope="row">
+                <span class="plan-feature-title">Match momentum graphs</span>
+                <span class="plan-feature-detail">See where the match swung point by point.</span>
+              </th>
               <td><span class="plan-availability is-excluded" aria-label="Not included">×</span></td>
               <td><span class="plan-availability is-included" aria-label="Included">✓</span></td>
             </tr>
-            
+
             <tr>
-              <th scope="row"><span class="plan-feature-title">Score your own rounds at Club Events</span><span class="plan-feature-detail"></span></th>
+              <th scope="row">
+                <span class="plan-feature-title">Score your rounds at club events</span>
+                <span class="plan-feature-detail">Use <span class="wordmark-logo" role="img" aria-label="UMP1RE logo"><img class="wordmark-logo-player" src="/assets/UMP1RE_Logo.svg" alt=""><img class="wordmark-logo-club" src="/assets/logo-black.png" alt=""></span> during club-run formats and competitions.</span>
+              </th>
               <td><span class="plan-availability is-excluded" aria-label="Not included">×</span></td>
               <td><span class="plan-availability is-included" aria-label="Included">✓</span></td>
             </tr>
           </tbody>
         </table>
       </div>
+
       <div class="modal-actions">
-        <a class="button primary" href="/player">Visit App Store</a>
-        <p>* Requires Club Membership to access these features</p>
+        <a class="button primary" href="/player">Get the app</a>
+        <p>* Requires a <span class="wordmark-logo" role="img" aria-label="UMP1RE logo"><img class="wordmark-logo-player" src="/assets/UMP1RE_Logo.svg" alt=""><img class="wordmark-logo-club" src="/assets/logo-black.png" alt=""></span> club venue.</p>
       </div>
     </section>
   </div>
 
-<div class="modal-shell" data-club-modal hidden>
+  <div class="modal-shell" data-club-modal hidden>
     <div class="modal-backdrop" data-close-club-modal></div>
     <section class="plan-modal" role="dialog" aria-modal="true" aria-labelledby="club-plan-title" aria-describedby="club-plan-copy" tabindex="-1">
-      <button class="modal-close" type="button" data-close-club-modal aria-label="Close plan comparison">X</button>
+      <button class="modal-close" type="button" data-close-club-modal aria-label="Close club benefits">X</button>
+
       <div class="modal-heading">
         <div class="modal-title-line">
-          <h3 id="club-plan-title">Benefits of</h3>
-          <span class="modal-brand-mark" role="img" aria-label="Brand logo">
+          <h3 id="club-plan-title">Club benefits</h3>
+          <span class="modal-brand-mark" role="img" aria-label="UMP1RE logo">
             <img class="modal-logo modal-logo-club" src="/assets/logo-black.png" alt="">
           </span>
         </div>
+        <p id="club-plan-copy">Live scoring, branded screen control, sponsor visibility and event formats for modern padel venues.</p>
       </div>
+
       <div class="plan-table-wrap">
         <table class="plan-table">
           <thead>
@@ -328,38 +707,60 @@
           </thead>
           <tbody>
             <tr>
-              <th scope="row"><span class="plan-feature-title">One screen per court</span><span class="plan-feature-detail">Flexible displays connected to your wifi</span></th>
+              <th scope="row">
+                <span class="plan-feature-title">One screen per court</span>
+                <span class="plan-feature-detail">Dedicated court displays connected to your venue Wi-Fi.</span>
+              </th>
               <td><span class="plan-availability is-included" aria-label="Included">✓</span></td>
             </tr>
-             <tr>
-              <th scope="row"><span class="plan-feature-title">Extendable to club wide screens with the Venue Function</span><span class="plan-feature-detail">Leverage your exisitng HDMI Matrix to fully control what you display</span></th>
-              <td><span class="plan-availability is-included" aria-label="Included">✓</span></td>
-            </tr>
-            <tr>
-              <th scope="row"><span class="plan-feature-title">Club identity on each screen</span><span class="plan-feature-detail">sssss</span></th> 
-              <td><span class="plan-availability is-included" aria-label="Included">✓</span></td>
-            </tr>
-                  <tr>
-              <th scope="row"><span class="plan-feature-title">Customisable Sponsorship Logo per screen</span><span class="plan-feature-detail">Add commercial placements court by court.</span></th>
 
-              <td><span class="plan-availability is-included" aria-label="Included">✓</span></td>
-            </tr>
-                  <tr>
-              <th scope="row"><span class="plan-feature-title">Player selectable views - all pre-approved by you</span><span class="plan-feature-detail">Offer visual options without losing club control.</span></th>
-              <td><span class="plan-availability is-included" aria-label="Included">✓</span></td>
-            </tr>
             <tr>
-              <th scope="row"><span class="plan-feature-title">Customisable idle time media</span><span class="plan-feature-detail">Use downtime for sponsor, event and club messaging.</span></th>
+              <th scope="row">
+                <span class="plan-feature-title">Extend to venue-wide screens</span>
+                <span class="plan-feature-detail">Use your existing HDMI matrix to control club-wide media displays.</span>
+              </th>
+              <td><span class="plan-availability is-included" aria-label="Included">✓</span></td>
+            </tr>
+
+            <tr>
+              <th scope="row">
+                <span class="plan-feature-title">Club-branded screen identity</span>
+                <span class="plan-feature-detail">Keep scoreboard and idle displays aligned with your venue brand.</span>
+              </th>
+              <td><span class="plan-availability is-included" aria-label="Included">✓</span></td>
+            </tr>
+
+            <tr>
+              <th scope="row">
+                <span class="plan-feature-title">Court-by-court sponsor placement</span>
+                <span class="plan-feature-detail">Add commercial placements across live and idle screen moments.</span>
+              </th>
+              <td><span class="plan-availability is-included" aria-label="Included">✓</span></td>
+            </tr>
+
+            <tr>
+              <th scope="row">
+                <span class="plan-feature-title">Club-approved player views</span>
+                <span class="plan-feature-detail">Offer visual choice without losing control of the screen experience.</span>
+              </th>
+              <td><span class="plan-availability is-included" aria-label="Included">✓</span></td>
+            </tr>
+
+            <tr>
+              <th scope="row">
+                <span class="plan-feature-title">Idle screen media</span>
+                <span class="plan-feature-detail">Use downtime for sponsor, event, coaching and club messaging.</span>
+              </th>
               <td><span class="plan-availability is-included" aria-label="Included">✓</span></td>
             </tr>
           </tbody>
         </table>
       </div>
+
       <div class="modal-actions">
-        <a class="button primary" href="/club">Book a demo</a>
+        <a class="button primary" href="/club">Book a club demo</a>
       </div>
     </section>
   </div>
-
 </body>
 </html>
