@@ -213,7 +213,7 @@ body[data-audience="clubs"] .flickswitch::before {
 
 .audience-detail {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
 }
 
@@ -278,13 +278,14 @@ body[data-audience="clubs"] .audience-section[data-audience="clubs"] {
 }
 
 .inline-logo-mark {
-  --inline-logo-height: 1.15em;
+  --inline-logo-height: 1.22em;
   display: inline-flex;
   align-items: center;
   width: auto;
   height: var(--inline-logo-height);
   margin-right: 0.04em;
   vertical-align: -0.16em;
+  white-space: nowrap;
 }
 
 .inline-logo {
@@ -910,12 +911,13 @@ body[data-audience="clubs"] .hero > .modal-actions[data-audience="clubs"] {
 }
 
 .section-heading h2 {
-  max-width: 22ch;
+  max-width: none;
   font-family: var(--display);
   font-size: clamp(3rem, 6.2vw, 5.6rem);
   line-height: 0.86;
   letter-spacing: 0.03em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .section-heading p {
@@ -1111,6 +1113,10 @@ body.modal-open {
     var(--panel-solid);
   box-shadow: 0 34px 120px rgba(0,0,0,0.62);
   color: var(--white);
+}
+
+[data-player-modal] .plan-modal {
+  max-height: min(96dvh, 66rem);
 }
 
 .plan-modal:focus {
@@ -1315,6 +1321,14 @@ body[data-audience="clubs"] .modal-logo-club {
   h1 { max-width: 10ch; }
   .product-card { max-width: 620px; }
   .section-heading { display: grid; }
+  .section-heading h2 { white-space: normal; }
+  #player-details .final-cta .single-line-heading {
+    width: 100%;
+    max-width: 100%;
+    white-space: normal;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+  }
   .plan-table th:not(:first-child),
   .plan-table td { width: 4.7rem; }
   .audience-detail, .strip { grid-template-columns: 1fr; }
@@ -1329,7 +1343,7 @@ body[data-audience="clubs"] .modal-logo-club {
   .nav a:not(.primary) { display: none; }
   .nav a { min-height: 2.35rem; padding: 0 0.75rem; font-size: 0.78rem; }
   .brand-mark { width: 8.8rem; }
-  .inline-logo-mark { --inline-logo-height: 1.08em; }
+  .inline-logo-mark { --inline-logo-height: 1.12em; }
   .flickswitch { width: 100%; }
   .flickswitch-tab { min-height: 3.35rem; gap: 0.5rem; padding-inline: 0.65rem; }
   .flickswitch-label { font-size: 1.08rem; }
@@ -1371,11 +1385,33 @@ body[data-audience="clubs"] .modal-logo-club {
   .trust-row { grid-template-columns: 1fr; }
   .hero-actions { display: grid; }
   .button { width: 100%; }
+  .carousel-actions .button {
+    width: fit-content;
+    max-width: 100%;
+    min-height: 3.25rem;
+    padding-inline: 0.85rem;
+    font-size: 0.9rem;
+    white-space: normal;
+    line-height: 1.05;
+    text-wrap: balance;
+    justify-self: center;
+  }
+  .carousel-actions .button .wordmark-logo {
+    margin-inline: 0.1em;
+  }
+  .carousel-actions .button .wordmark-logo img {
+    height: 0.82em;
+  }
   .section { padding: 2rem 0; }
   .section-heading h2,
   .final-cta h2 { font-size: clamp(2.65rem, 14vw, 4.4rem); }
+  .final-cta h2 {
+    white-space: normal;
+    text-wrap: balance;
+  }
   .modal-shell { padding: 0; place-items: stretch; }
   .plan-modal { width: 100%; max-height: 100dvh; border-radius: 0; border-inline: 0; padding: 1rem; }
+  [data-player-modal] .plan-modal { max-height: 100dvh; }
   .modal-title-line { gap: 0.55rem; flex-wrap: wrap; }
   .modal-brand-mark { height: 3.15rem; }
   .modal-title-line h2,

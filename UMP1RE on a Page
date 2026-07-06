@@ -38,4 +38,35 @@ At end of the session -  scores, stats and rich result card are saved to persist
 IF UMP1RE Enabled courts are available
 The watch score updates reach the phone and then are sent to the DO/Worker/SSE to update the courtside screens.
 
+The match engine handles the screen scores.
+at game set and match end we see small anitmaitons/flares across the surfaces
 
+
+Additonal Functions outside of the scoring path
+
+
+Clubs can upload edit and curate their own media into playlists 
+
+This media is stored in R2/D1, and served up on dedicated urls, which are shared with the court screens - one url per screen (courtid is part of that url)
+Clubs can also upload sponsor and coroporate logos into the r2 to be overlaid as part of the court scoring screens
+
+When court screens are idle (ie not actively displaying a match scoreboard) the curated playlists are displayed on loop.
+This adds value to the club as they can sell ad space on the court screens and also promote club events.
+
+additional to this, i will offer a HDMI matrix souktion, whereby a configured firestick set to a predefined url can be added into the clubs infrasrtrcutre and point to this url (suffixed with the clubid) and display a seperate playlist across all linked screens from a single source.
+if the host hdmi input device is single input, then a manual hdmi switcher becomes paet of the solution.
+
+Furthermore, as we are running an ios app, we can leverage app notifications - allowing players to send other subscribers/logged in users updates for their vacancies.
+Similarly we can offer a service for clubs to advertise their own offers directly to subscribing users.
+-- we need to be careful not to become a spam generator.
+
+Also i wish to include an event management fnction whereby the club can organise, stand up run and finish events like Americano in league with the court screens - ergo players join the session on their phones, subscribers can play and score from their watch and the leaderboards either update from the watch scoring or are score post facto by the organiser on their device.
+these events are typically mutli court and multi player so will need careful architecting.
+
+As players are now feeding us point by point info, we should leverage this to build player helpful insights into their game, but also retain this data for wider insights.
+Momentum graphs, point count, serve effectiveness etc for players.
+We can also leverage AI to produce semi customised match reports based on the results - cant explain the shots but know who won them.
+
+Play frequency, time and location, points scored/lost etc. in time this becomes more valuable to corporations
+
+Eventually moves into video/camera systems become interesting.
