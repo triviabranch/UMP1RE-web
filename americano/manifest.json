@@ -1,0 +1,31 @@
+{
+  "name": "Ump1re Americano",
+  "short_name": "Americano",
+  "description": "Americano tournament creator and scoreboard",
+  "start_url": "/americano-test/",
+  "scope": "/americano-test/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#24262e",
+  "background_color": "#24262e",
+  "icons": [
+    {
+      "src": "/assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
