@@ -43,6 +43,8 @@ const state = {
   scores: [],
   drafts: new Map(),
   pageIndex: 0,
+  currentRoundIndex: 0,
+  activeFixtureIndex: null,
   returnPageIndex: 0,
   pendingSkipRoundIndex: null,
   built: false,
@@ -145,7 +147,7 @@ function openSkipModal(fixtureIndex) {
   const teamB = teamLabel(fixture.match.b, ' & ');
   els['skip-modal-body'].innerHTML = `
     <div class="notice">
-      No score has been selected for this round.
+      No score has been selected for this match.
     </div>
     <div class="skip-summary">
       <div><strong>${escapeHtml(fixtureLabel(fixture))}</strong></div>
@@ -172,8 +174,9 @@ function confirmSkipRound() {
   }
 
   state.scores[fixtureIndex] = {
+    fixtureIndex,
     round: fixture.roundIndex,
-    matchIdx: fixture.matchIndex,
+    matchIndex: fixture.matchIndex,
     scoreA: 0,
     scoreB: 0,
     skipped: true,
@@ -181,12 +184,12 @@ function confirmSkipRound() {
   state.drafts.set(fixtureIndex, { a: 0, b: 0 });
   closeSkipModal();
 
-  if (fixtureIndex === state.fixtures.length - 1) {
+  if (allFixturesSaved()) {
     openLeaderboard();
     return;
   }
 
-  state.pageIndex = 3 + ((fixtureIndex + 1) * 2);
+  state.activeFixtureIndex = null;
   render();
 }
 
@@ -201,6 +204,8 @@ function resetTournament() {
   state.scores = [];
   state.drafts = new Map();
   state.pageIndex = 0;
+  state.currentRoundIndex = 0;
+  state.activeFixtureIndex = null;
   state.pendingSkipRoundIndex = null;
   state.built = false;
   render();
@@ -225,17 +230,10 @@ function renderPage() {
   if (state.pageIndex === 1) return renderSetupSettingsPage();
   if (state.pageIndex === 2) return renderSetupNamesPage();
   if (!state.built) return renderIntroPage();
-
-  const offset = state.pageIndex - 3;
-
-  if (offset < 0 || offset >= state.fixtures.length * 2) {
-    return renderIntroPage();
+  if (state.activeFixtureIndex !== null && state.activeFixtureIndex !== undefined) {
+    return renderScorePage(state.activeFixtureIndex);
   }
-
-  const fixtureIndex = Math.floor(offset / 2);
-  return offset % 2 === 0
-    ? renderNextUpPage(fixtureIndex)
-    : renderScorePage(fixtureIndex);
+  return renderRoundOverviewPage(state.currentRoundIndex);
 }
 
 function renderIntroPage() {
@@ -446,40 +444,82 @@ function renderScorePage(fixtureIndex) {
   `;
 }
 
-function renderNextUpPage(fixtureIndex) {
-  const fixture = state.fixtures[fixtureIndex];
-  if (!fixture) return renderIntroPage();
-  const teamA = teamLabel(fixture.match.a);
-  const teamB = teamLabel(fixture.match.b);
-  const sit = fixture.round.sitOut.length ? fixture.round.sitOut.map(i => state.players[i]).join(', ') : 'None';
-  const roundLabel = fixtureLabel(fixture);
+function renderRoundOverviewPage(roundIndex = 0) {
+  if (!state.schedule.length) return renderIntroPage();
+
+  const safeRoundIndex = Math.max(0, Math.min(roundIndex, state.schedule.length - 1));
+  const round = state.schedule[safeRoundIndex];
+  const roundLabel = `Round ${safeRoundIndex + 1}/${state.schedule.length}`;
+  const roundFixtures = state.fixtures.filter((fixture) => fixture.roundIndex === safeRoundIndex);
+  const completedCount = roundFixtures.filter((fixture) => state.scores[fixture.fixtureIndex]).length;
+
+  const roundTabs = state.schedule.map((entry, idx) => {
+    const fixtures = state.fixtures.filter((fixture) => fixture.roundIndex === idx);
+    const saved = fixtures.filter((fixture) => state.scores[fixture.fixtureIndex]).length;
+    return `
+      <button class="round-tab ${idx === safeRoundIndex ? 'active' : ''}" type="button" data-round-choice="${idx}">
+        Round ${idx + 1}
+        <span class="round-tab-count">${saved}/${fixtures.length}</span>
+      </button>
+    `;
+  }).join('');
+
+  const fixtureCards = roundFixtures.map((fixture) => {
+    const saved = state.scores[fixture.fixtureIndex];
+    const teamA = teamLabel(fixture.match.a, ' & ');
+    const teamB = teamLabel(fixture.match.b, ' & ');
+    const sit = fixture.round.sitOut.length ? fixture.round.sitOut.map(i => state.players[i]).join(', ') : 'None';
+    return `
+      <button class="schedule-item fixture-card ${saved ? 'completed' : ''}" type="button" data-open-fixture="${fixture.fixtureIndex}">
+        <div class="head">
+          <div>
+            <div class="round">${escapeHtml(fixtureLabel(fixture))}</div>
+            <div class="meta">${saved ? `Saved ${saved.scoreA} - ${saved.scoreB}` : 'Tap to score this match'}</div>
+          </div>
+          <div class="fixture-badge">${saved ? 'Done' : 'Open'}</div>
+        </div>
+        <div class="match">${escapeHtml(teamA)} vs ${escapeHtml(teamB)}</div>
+        <div class="sit">Sit out: ${escapeHtml(sit)}</div>
+      </button>
+    `;
+  }).join('');
 
   return `
     <section class="screen active">
-      <div class="content nextup-hero">
-        <div class="nextup-kicker">${roundLabel}</div>
-        <div class="nextup-title">Up Next</div>
-        <div class="nextup-grid">
-          <div class="nextup-card a">
-            <div class="nextup-label">Team A</div>
-            <div class="nextup-names">${escapeHtml(teamA)}</div>
-          </div>
-          <div class="nextup-card b">
-            <div class="nextup-label">Team B</div>
-            <div class="nextup-names">${escapeHtml(teamB)}</div>
-          </div>
-        </div>
-        <div class="nextup-sit">Sit out: <strong>${escapeHtml(sit)}</strong></div>
-        <div class="nextup-start-wrap">
-          <button class="btn primary nextup-start" data-action="next">Start round</button>
+      <div class="screen-head">
+        <div>
+          <h2>${escapeHtml(roundLabel)}</h2>
+          <p>${roundFixtures.length} match${roundFixtures.length === 1 ? '' : 'es'} on this round. Tap any pairing to open its score page.</p>
         </div>
       </div>
-      <div class="page-footer score-footer nextup-footer">
+      <div class="content leaderboard-page">
+        <div class="round-nav">
+          ${roundTabs}
+        </div>
+        <div class="schedule-list">
+          ${fixtureCards}
+        </div>
+        <div class="round-summary">
+          <div class="round-summary-item">
+            <span class="label">Completed this round</span>
+            <strong>${completedCount} / ${roundFixtures.length}</strong>
+          </div>
+          <div class="round-summary-item">
+            <span class="label">Courts in play</span>
+            <strong>${round.matches.length}</strong>
+          </div>
+        </div>
+      </div>
+      <div class="page-footer score-footer">
         <div class="screen-back">
           <button class="btn secondary" data-action="back">Back</button>
         </div>
-        <div class="score-footer-mid" aria-hidden="true"></div>
-        <div class="page-actions" aria-hidden="true"></div>
+        <div class="score-footer-mid">
+          <button class="btn secondary" data-action="leaderboard" type="button">Leaderboard</button>
+        </div>
+        <div class="page-actions">
+          <button class="btn primary" data-action="next-round">Next round</button>
+        </div>
       </div>
     </section>
   `;
@@ -494,7 +534,7 @@ function renderLeaderboard() {
     return;
   }
 
-  const standings = calcAmericanoStandings(state.numPlayers, state.schedule, state.scores);
+  const standings = calcAmericanoStandings(state.numPlayers, state.fixtures, state.scores);
   const completed = countSavedFixtures();
   const maxPts = standings[0]?.points ?? 0;
   const missed = getMissedFixtures();
@@ -560,16 +600,14 @@ function attachPageHandlers() {
 
   const backBtn = document.querySelector('[data-action="back"]');
   if (backBtn) backBtn.addEventListener('click', () => {
+    if (Number.isInteger(state.activeFixtureIndex)) {
+      closeFixture();
+      return;
+    }
     if (state.pageIndex > 0) {
       state.pageIndex -= 1;
       render();
     }
-  });
-
-  const nextBtn = document.querySelector('[data-action="next"]');
-  if (nextBtn) nextBtn.addEventListener('click', () => {
-    state.pageIndex = Math.min(state.pageIndex + 1, maxPageIndex());
-    render();
   });
 
   const leaderboardBtn = document.querySelector('[data-action="leaderboard"]');
@@ -589,6 +627,21 @@ function attachPageHandlers() {
 
   const saveBtn = document.querySelector('[data-action="save"]');
   if (saveBtn) saveBtn.addEventListener('click', saveRound);
+
+  const nextRoundBtn = document.querySelector('[data-action="next-round"]');
+  if (nextRoundBtn) nextRoundBtn.addEventListener('click', () => {
+    state.activeFixtureIndex = null;
+    if (state.currentRoundIndex < state.schedule.length - 1) {
+      state.currentRoundIndex += 1;
+      render();
+      return;
+    }
+    if (allFixturesSaved()) {
+      openLeaderboard();
+      return;
+    }
+    render();
+  });
 
   document.querySelectorAll('input[data-player-index]').forEach(input => {
     input.addEventListener('click', () => {
@@ -666,7 +719,8 @@ function attachPageHandlers() {
 
   document.querySelectorAll('[data-score-grid]').forEach(grid => {
     const side = grid.getAttribute('data-score-grid');
-    const fixtureIndex = Math.floor((state.pageIndex - 3) / 2);
+    const fixtureIndex = state.activeFixtureIndex;
+    if (!Number.isInteger(fixtureIndex)) return;
     const draft = getDraft(fixtureIndex);
     grid.innerHTML = scoreButtonsHtml(side, draft);
     grid.querySelectorAll('button[data-value]').forEach(btn => {
@@ -674,6 +728,24 @@ function attachPageHandlers() {
         const value = Number(btn.dataset.value);
         setDraftScore(fixtureIndex, side, value);
       });
+    });
+  });
+
+  document.querySelectorAll('[data-round-choice]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const nextIndex = Number(btn.dataset.roundChoice);
+      if (!Number.isInteger(nextIndex)) return;
+      state.currentRoundIndex = Math.max(0, Math.min(nextIndex, state.schedule.length - 1));
+      state.activeFixtureIndex = null;
+      render();
+    });
+  });
+
+  document.querySelectorAll('[data-open-fixture]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const fixtureIndex = Number(btn.dataset.openFixture);
+      if (!Number.isInteger(fixtureIndex)) return;
+      openFixture(fixtureIndex);
     });
   });
 }
@@ -687,6 +759,8 @@ function buildTournament() {
     state.drafts.set(fixtureIdx, { a: null, b: null });
   });
   state.built = true;
+  state.currentRoundIndex = 0;
+  state.activeFixtureIndex = null;
   state.pageIndex = 3;
   render();
 }
@@ -697,7 +771,7 @@ function resetNames() {
 }
 
 function saveRound() {
-  const fixtureIndex = Math.floor((state.pageIndex - 3) / 2);
+  const fixtureIndex = state.activeFixtureIndex;
   const fixture = state.fixtures[fixtureIndex];
   if (!fixture) return;
   const draft = getDraft(fixtureIndex);
@@ -713,20 +787,20 @@ function saveRound() {
   }
 
   state.scores[fixtureIndex] = {
+    fixtureIndex,
     round: fixture.roundIndex,
-    matchIdx: fixture.matchIndex,
+    matchIndex: fixture.matchIndex,
     scoreA: draft.a,
     scoreB: draft.b,
   };
 
-  if (fixtureIndex === state.fixtures.length - 1) {
+  state.activeFixtureIndex = null;
+
+  if (allFixturesSaved()) {
     openLeaderboard();
     return;
   }
 
-  if (fixtureIndex < state.fixtures.length - 1) {
-    state.pageIndex = 3 + ((fixtureIndex + 1) * 2);
-  }
   render();
 }
 
@@ -751,6 +825,19 @@ function getDraft(fixtureIndex) {
   return state.drafts.get(fixtureIndex);
 }
 
+function openFixture(fixtureIndex) {
+  const fixture = state.fixtures[fixtureIndex];
+  if (!fixture) return;
+  state.currentRoundIndex = fixture.roundIndex;
+  state.activeFixtureIndex = fixtureIndex;
+  render();
+}
+
+function closeFixture() {
+  state.activeFixtureIndex = null;
+  render();
+}
+
 function scoreButtonsHtml(side, draft) {
   const activeClass = side === 'a' ? 'a' : 'b';
   return Array.from({ length: state.pointsPerGame + 1 }, (_, value) => `
@@ -766,28 +853,27 @@ function updateTopbarCopy() {
       : 'Choose players, courts and points, then continue to names.';
     return;
   }
-  const offset = state.pageIndex - 3;
-  const pageText = state.pageIndex === 0
-    ? 'Landing'
-    : state.pageIndex === 1
-      ? 'Setup'
-      : state.pageIndex === 2
-        ? 'Player names'
-        : offset % 2 === 0
-          ? 'Next up'
-          : fixtureLabel(state.fixtures[Math.floor(offset / 2)]);
-  els['topbar-copy'].textContent = pageText;
+  if (Number.isInteger(state.activeFixtureIndex)) {
+    els['topbar-copy'].textContent = fixtureLabel(state.fixtures[state.activeFixtureIndex]);
+    return;
+  }
+  const round = state.schedule[state.currentRoundIndex];
+  els['topbar-copy'].textContent = `Round ${state.currentRoundIndex + 1} · ${round?.matches?.length || 0} courts`;
 }
 
 function countSavedFixtures() {
   return state.scores.filter(Boolean).length;
 }
 
+function allFixturesSaved() {
+  return state.fixtures.length > 0 && countSavedFixtures() === state.fixtures.length;
+}
+
 function getMissedFixtures() {
   return state.scores
-    .map((entry, roundIndex) => {
+    .map((entry) => {
       if (!entry || !entry.skipped) return null;
-      const fixture = state.fixtures[roundIndex];
+      const fixture = state.fixtures[entry.fixtureIndex];
       if (!fixture) return null;
       return {
         roundLabel: fixtureLabel(fixture),
@@ -796,10 +882,6 @@ function getMissedFixtures() {
       };
     })
     .filter(Boolean);
-}
-
-function maxPageIndex() {
-  return state.built ? 3 + (state.fixtures.length * 2) - 1 : 2;
 }
 
 function buildAmericanoSchedule(numPlayers, rotations, courts = 1) {
@@ -889,6 +971,7 @@ function buildFixtureOrder(schedule) {
   schedule.forEach((round, roundIndex) => {
     (round.matches || []).forEach((match, matchIndex) => {
       fixtures.push({
+        fixtureIndex: fixtures.length,
         roundIndex,
         matchIndex,
         courtIndex: matchIndex,
@@ -910,16 +993,16 @@ function fixtureLabel(fixture) {
   return `Round ${round}/${totalRounds} · Court ${court}/${totalCourts}`;
 }
 
-function calcAmericanoStandings(numPlayers, schedule, scores) {
+function calcAmericanoStandings(numPlayers, fixtures, scores) {
   const pts = new Array(numPlayers).fill(0);
   const wins = new Array(numPlayers).fill(0);
   const played = new Array(numPlayers).fill(0);
 
-  for (const entry of scores) {
+  for (const [fixtureIndex, entry] of scores.entries()) {
     if (!entry) continue;
-    const round = schedule[entry.round];
-    if (!round) continue;
-    const match = round.matches[0];
+    const fixture = fixtures[fixtureIndex];
+    if (!fixture) continue;
+    const match = fixture.match;
     if (!match) continue;
 
     for (const p of match.a) {
@@ -955,7 +1038,9 @@ function updateLayoutMode() {
     ? 'landing'
     : state.pageIndex === 2
       ? 'names'
-      : (state.pageIndex >= 3 && state.built ? 'match' : 'setup');
+      : (state.pageIndex >= 3 && state.built
+        ? (Number.isInteger(state.activeFixtureIndex) ? 'match' : 'overview')
+        : 'setup');
   document.body.classList.remove('require-landscape');
   document.body.dataset.pageMode = pageMode;
   document.body.dataset.points = String(state.pointsPerGame);
@@ -969,10 +1054,11 @@ function scoreCols(pointsPerGame) {
 function calcCoverage(numPlayers, schedule) {
   const seen = new Map();
   for (const round of schedule) {
-    const match = round.matches[0];
-    for (const pair of [match.a, match.b]) {
-      const key = sortedPair(pair[0], pair[1]);
-      seen.set(key, (seen.get(key) ?? 0) + 1);
+    for (const match of round.matches || []) {
+      for (const pair of [match.a, match.b]) {
+        const key = sortedPair(pair[0], pair[1]);
+        seen.set(key, (seen.get(key) ?? 0) + 1);
+      }
     }
   }
 
