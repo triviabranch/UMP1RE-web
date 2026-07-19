@@ -15,8 +15,14 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
+  padding: clamp(0.9rem, 4vw, 2rem);
   text-align: center;
+  overflow-x: hidden;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
 }
 
 .logo {
@@ -73,4 +79,28 @@ p {
   font-size: 0.75rem;
   color: rgba(255,255,255,0.25);
   margin-top: 1.5rem;
+}
+
+@media (max-width: 420px) {
+  .logo {
+    font-size: 1.6rem;
+  }
+
+  .check {
+    font-size: 3.2rem;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  p {
+    font-size: 0.92rem;
+  }
+
+  .btn {
+    padding: 0.9rem 1.4rem;
+    font-size: 0.9rem;
+    width: min(100%, 20rem);
+  }
 }

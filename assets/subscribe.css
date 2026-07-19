@@ -19,7 +19,8 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
+  padding: clamp(0.9rem, 4vw, 2rem);
+  overflow-x: hidden;
 }
 
 .card {
@@ -34,8 +35,8 @@ html, body {
 
 .brand-logo {
   display: block;
-  height: 44px;
-  width: auto;
+  height: auto;
+  width: min(100%, 220px);
   margin: 0 auto 0.25rem;
 }
 
@@ -130,6 +131,7 @@ h1 {
   width: auto;
   vertical-align: -0.1em;
   display: inline-block;
+  max-width: 100%;
 }
 
 .sign-out-row {
@@ -142,4 +144,30 @@ h1 {
   color: var(--dim);
   cursor: pointer;
   text-decoration: underline;
+}
+
+@media (max-width: 420px) {
+  .card {
+    padding: 1.25rem;
+    border-radius: 14px;
+  }
+
+  .brand-logo {
+    width: min(68vw, 180px);
+  }
+
+  h1 {
+    font-size: 1.35rem;
+  }
+
+  .subtitle,
+  .features li {
+    font-size: 0.84rem;
+  }
+
+  .btn {
+    min-height: 46px;
+    padding: 0.85rem 0.95rem;
+    font-size: 0.9rem;
+  }
 }

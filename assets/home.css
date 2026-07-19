@@ -71,6 +71,10 @@ body::before {
 }
 
 a { color: inherit; }
+img {
+  max-width: 100%;
+  height: auto;
+}
 
 .page {
   position: relative;
@@ -291,6 +295,7 @@ body[data-audience="clubs"] .audience-section[data-audience="clubs"] {
 .inline-logo {
   width: auto;
   height: 100%;
+  max-width: 100%;
   object-fit: contain;
 }
 
@@ -620,7 +625,11 @@ body[data-audience="clubs"] .hero > .modal-actions[data-audience="clubs"] {
   min-height: 3.75rem;
   padding-inline: 1.55rem;
   font-size: 1.04rem;
-  white-space: nowrap;
+  white-space: normal;
+  text-wrap: balance;
+  line-height: 1.05;
+  gap: 0.35rem;
+  text-align: center;
 }
 
 .carousel-actions .inline-logo-mark {
@@ -1072,6 +1081,15 @@ body[data-audience="clubs"] .hero > .modal-actions[data-audience="clubs"] {
 
 .final-cta .hero-actions { justify-content: center; }
 
+.final-cta .cta-logo {
+  display: block;
+  width: min(180px, 42vw);
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto 1rem;
+  object-fit: contain;
+}
+
 body.modal-open {
   overflow: hidden;
 }
@@ -1349,26 +1367,15 @@ body[data-audience="clubs"] .modal-logo-club {
   .flickswitch-label { font-size: 1.08rem; }
   .flickswitch-subline { display: none; }
   .hero {
-    grid-template-columns: minmax(0, 1fr) minmax(7.5rem, 34vw);
+    grid-template-columns: 1fr;
     gap: 0.85rem;
-    align-items: center;
+    align-items: start;
     padding: 1.45rem 0 1rem;
   }
-  .hero-copy { display: contents; }
-  body[data-audience="players"] .hero-copy h1[data-audience="players"],
-  body[data-audience="clubs"] .hero-copy h1[data-audience="clubs"] {
-    grid-column: 1;
-    grid-row: 1;
-  }
-  .hero-copy .lead[data-audience],
-  .hero-copy .trust-row[data-audience],
-  .hero-copy .hero-actions[data-audience] {
-    grid-column: 1 / -1;
-  }
   .hero-carousel[data-audience] {
-    grid-column: 2;
-    grid-row: 1;
-    align-self: center;
+    grid-column: auto;
+    grid-row: auto;
+    align-self: stretch;
   }
   h1 { max-width: none; font-size: clamp(3rem, 15vw, 5rem); line-height: 0.84; }
   .lead { font-size: 1rem; line-height: 1.42; }
@@ -1383,11 +1390,14 @@ body[data-audience="clubs"] .modal-logo-club {
   .watchface-media::before { inset: 14% 6%; filter: blur(26px); }
   .watchface-carousel .carousel-slide img { max-height: 11rem; max-width: 96%; }
   .trust-row { grid-template-columns: 1fr; }
-  .hero-actions { display: grid; }
+  .hero-actions {
+    display: grid;
+    justify-items: center;
+  }
   .button { width: 100%; }
   .carousel-actions .button {
-    width: fit-content;
-    max-width: 100%;
+    width: 100%;
+    max-width: 24rem;
     min-height: 3.25rem;
     padding-inline: 0.85rem;
     font-size: 0.9rem;
@@ -1408,6 +1418,9 @@ body[data-audience="clubs"] .modal-logo-club {
   .final-cta h2 {
     white-space: normal;
     text-wrap: balance;
+  }
+  .final-cta .cta-logo {
+    width: min(58vw, 180px);
   }
   .modal-shell { padding: 0; place-items: stretch; }
   .plan-modal { width: 100%; max-height: 100dvh; border-radius: 0; border-inline: 0; padding: 1rem; }

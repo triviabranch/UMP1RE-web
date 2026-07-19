@@ -129,6 +129,7 @@
   .final-cta .cta-logo {
     display: block;
     width: min(180px, 42vw);
+    max-width: 100%;
     height: auto;
     margin: 0 auto 1rem;
     object-fit: contain;
@@ -169,6 +170,7 @@
     display: none;
     height: 1em;
     width: auto;
+    max-width: 100%;
   }
 
   .wordmark-logo .wordmark-logo-player {
@@ -190,7 +192,7 @@
   .lead .wordmark-logo img {
     height: 1.5em;
     margin-left: 5px;
-    margin-right:5px
+    margin-right: 5px;
   }
 
   .button .wordmark-logo img,
@@ -202,13 +204,15 @@
   .final-cta .wordmark-logo img {
     height: 1.5em;
     margin-left: 5px;
-    margin-right:5px
+    margin-right: 5px;
+    max-width: 100%;
   }
 
   h1 .wordmark-logo img,
   h2 .wordmark-logo img,
   h3 .wordmark-logo img {
     height: 0.98em;
+    max-width: 100%;
   }
 
   /* Ensure the main header logo switches correctly on the lime club background */
@@ -397,9 +401,12 @@
 
         <div class="hero-actions carousel-actions">
           <button class="button primary" type="button" data-open-player-modal>
-            What can the 
-            <span class="wordmark-logo" role="img" aria-label="UMP1RE logo"><img class="wordmark-logo-player" src="/assets/logo-black.png" alt=""><img class="wordmark-logo-club" src="/assets/logo-black.png" alt=""></span>
-            app do?
+            <span>What can the</span>
+            <span class="wordmark-logo" role="img" aria-label="UMP1RE logo">
+              <img class="wordmark-logo-player" src="/assets/logo-black.png" alt="">
+              <img class="wordmark-logo-club" src="/assets/logo-black.png" alt="">
+            </span>
+            <span>app do?</span>
           </button>
         </div>
       </aside>
@@ -431,9 +438,11 @@
 
         <div class="hero-actions carousel-actions">
           <button class="button primary" type="button" data-open-club-modal>
-            <p>What do </p></br> 
-            <span class="wordmark-logo" role="img" aria-label="UMP1RE logo"><img class="wordmark-logo-club" src="/assets/logo.png" alt=""></span>
-          <p> clubs get?</p>
+            <span>What do</span>
+            <span class="wordmark-logo" role="img" aria-label="UMP1RE logo">
+              <img class="wordmark-logo-club" src="/assets/logo.png" alt="">
+            </span>
+            <span>clubs get?</span>
           </button>
 
         </div>
@@ -470,9 +479,9 @@
           <span>At <span class="wordmark-logo" role="img" aria-label="UMP1RE logo"><img class="wordmark-logo-player" src="/assets/UMP1RE_Logo.svg" alt=""><img class="wordmark-logo-club" src="/assets/logo-black.png" alt=""></span> venues, your scoring can power the court screen and club event boards.</span>
         </div>
       </div>
-      </br>
-          <a class="button primary" href="/player">Get the app</a>
-        </div>
+      <div class="hero-actions">
+        <a class="button primary" href="/player">Get the app</a>
+      </div>
       </section>
     </section>
 
@@ -543,7 +552,7 @@
             <img class="modal-logo modal-logo-club" src="/assets/logo-black.png" alt="">
           </span>
         </div>
-        <p id="player-plan-copy"><strong>Score standard matches for free.</strong>   </br>Premium features £3.99/month or £39.99/year.</p>
+        <p id="player-plan-copy"><strong>Score standard matches for free.</strong> Premium features £3.99/month or £39.99/year.</p>
 
       </div>
 
@@ -649,10 +658,8 @@
         
       </div>
       <div class="modal-actions">
-        
         <p>* Requires a <span class="wordmark-logo" role="img" aria-label="UMP1RE logo"><img class="wordmark-logo-player" src="/assets/UMP1RE_Logo.svg" alt=""><img class="wordmark-logo-club" src="/assets/logo-black.png" alt=""></span> club venue.</p>
-      </br>
-      <a class="button primary" href="/player">Get the app</a>
+        <a class="button primary" href="/player">Get the app</a>
       </div>
     </section>
   </div>
