@@ -1368,13 +1368,32 @@ body[data-audience="clubs"] .modal-logo-club {
   .flickswitch-subline { display: none; }
   .hero {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "title"
+      "lead"
+      "carousel"
+      "trust";
     gap: 0.85rem;
     align-items: start;
     padding: 1.45rem 0 1rem;
   }
+  .hero-copy {
+    display: contents;
+  }
+  body[data-audience="players"] .hero-copy h1[data-audience="players"],
+  body[data-audience="clubs"] .hero-copy h1[data-audience="clubs"] {
+    grid-area: title;
+  }
+  body[data-audience="players"] .hero-copy .lead[data-audience="players"],
+  body[data-audience="clubs"] .hero-copy .lead[data-audience="clubs"] {
+    grid-area: lead;
+  }
+  body[data-audience="players"] .hero-copy .trust-row[data-audience="players"],
+  body[data-audience="clubs"] .hero-copy .trust-row[data-audience="clubs"] {
+    grid-area: trust;
+  }
   .hero-carousel[data-audience] {
-    grid-column: auto;
-    grid-row: auto;
+    grid-area: carousel;
     align-self: stretch;
   }
   h1 { max-width: none; font-size: clamp(3rem, 15vw, 5rem); line-height: 0.84; }
