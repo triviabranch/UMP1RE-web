@@ -1218,14 +1218,14 @@ body[data-audience="clubs"] .modal-logo-club {
 }
 
 .modal-heading p {
-  margin-top: 0.8rem;
+  margin-top: 0.65rem;
   color: var(--ink-2);
   font-size: 1rem;
   line-height: 1.5;
 }
 
 .plan-table-wrap {
-  margin-top: 1.3rem;
+  margin-top: 0.85rem;
   border: 1px solid var(--line);
   border-radius: 26px;
   background: rgba(255,255,255,0.04);
@@ -1327,7 +1327,7 @@ body[data-audience="clubs"] .modal-logo-club {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
-  margin-top: 1.2rem;
+  margin-top: 0.95rem;
 }
 
 @media (max-width: 900px) {
@@ -1460,7 +1460,8 @@ body[data-audience="clubs"] .modal-logo-club {
   .plan-table th:not(:first-child),
   .plan-table td { width: 3.8rem; }
   .plan-availability { width: 1.65rem; height: 1.65rem; font-size: 1.05rem; }
-  .modal-actions { display: grid; }
+  .plan-table-wrap { margin-top: 0.7rem; }
+  .modal-actions { display: grid; margin-top: 0.8rem; }
   .screen-top, .live-header, .team, .feed-item { gap: 0.65rem; }
   .team { grid-template-columns: 1fr auto; }
   .points { min-width: 3.5rem; font-size: 4rem; }
