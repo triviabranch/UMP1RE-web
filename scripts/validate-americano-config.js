@@ -7,38 +7,6 @@ const path = require('path');
 const root = path.resolve(__dirname, '..');
 const configPath = path.join(root, 'americano', 'config.json');
 
-const FIXED_4 = [
-  { a: [0, 1], b: [2, 3], sit: [] },
-  { a: [0, 2], b: [1, 3], sit: [] },
-  { a: [0, 3], b: [1, 2], sit: [] },
-];
-
-const FIXED_5 = [
-  { a: [0, 1], b: [2, 3], sit: [4] },
-  { a: [0, 2], b: [1, 4], sit: [3] },
-  { a: [0, 3], b: [2, 4], sit: [1] },
-  { a: [0, 4], b: [1, 3], sit: [2] },
-  { a: [1, 2], b: [3, 4], sit: [0] },
-];
-
-const FIXED_6 = [
-  { a: [1, 4], b: [2, 5], sit: [0, 3] },
-  { a: [0, 5], b: [1, 3], sit: [2, 4] },
-  { a: [0, 3], b: [2, 4], sit: [1, 5] },
-  { a: [0, 2], b: [1, 5], sit: [3, 4] },
-  { a: [0, 4], b: [2, 3], sit: [1, 5] },
-  { a: [1, 5], b: [3, 4], sit: [0, 2] },
-  { a: [0, 1], b: [2, 5], sit: [3, 4] },
-  { a: [1, 4], b: [3, 5], sit: [0, 2] },
-  { a: [0, 4], b: [2, 3], sit: [1, 5] },
-  { a: [1, 2], b: [4, 5], sit: [0, 3] },
-  { a: [0, 2], b: [1, 3], sit: [4, 5] },
-  { a: [0, 5], b: [3, 4], sit: [1, 2] },
-  { a: [1, 2], b: [3, 5], sit: [0, 4] },
-  { a: [0, 1], b: [4, 5], sit: [2, 3] },
-  { a: [0, 3], b: [2, 4], sit: [1, 5] },
-];
-
 const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 const errors = [];
 let checked = 0;
@@ -46,7 +14,7 @@ let checked = 0;
 validateRange('playerOptions', config.playerOptions, 4, 16);
 validateRange('courtOptions', config.courtOptions, 1, 4);
 validateRange('pointOptions', config.pointOptions, 16, 24);
-validateRange('rotationOptions', config.rotationOptions, 1, 12);
+validateRange('rotationOptions', config.rotationOptions, 1, 4);
 
 for (const points of config.pointOptions || []) {
   const minutes = Number(config.minutesPerGame?.[points]);
@@ -97,19 +65,19 @@ function validateTournament({ players, courts, points, rotations }) {
     return;
   }
 
-  const maxPossibleCourts = Math.max(1, Math.floor(players / 4));
+  const courtCount = Math.min(Math.max(1, Number(courts) || 1), Math.floor(players / 4), 4);
+  const expectedPairCount = players * (players - 1) / 2;
+  const seenPairs = new Set();
+
   schedule.forEach((round, idx) => {
     if (!round.matches.length) {
       errors.push(`${context}, round ${idx + 1}: no matches`);
     }
-    if (round.matches.length > courts) {
+    if (round.matches.length > courtCount) {
       errors.push(`${context}, round ${idx + 1}: uses more courts than selected`);
     }
-    if (round.matches.length > maxPossibleCourts) {
-      errors.push(`${context}, round ${idx + 1}: uses impossible court count`);
-    }
 
-    const seen = new Set();
+    const seenPlayers = new Set();
     for (const match of round.matches) {
       if (!Array.isArray(match.a) || !Array.isArray(match.b) || match.a.length !== 2 || match.b.length !== 2) {
         errors.push(`${context}, round ${idx + 1}: every match must have two doubles teams`);
@@ -120,129 +88,177 @@ function validateTournament({ players, courts, points, rotations }) {
         if (!Number.isInteger(player) || player < 0 || player >= players) {
           errors.push(`${context}, round ${idx + 1}: player index ${player} is out of range`);
         }
-        if (seen.has(player)) {
+        if (seenPlayers.has(player)) {
           errors.push(`${context}, round ${idx + 1}: player ${player + 1} appears more than once`);
         }
-        seen.add(player);
+        seenPlayers.add(player);
       }
+
+      seenPairs.add(pairKey(match.a[0], match.a[1]));
+      seenPairs.add(pairKey(match.b[0], match.b[1]));
     }
 
     for (const player of round.sitOut || []) {
       if (!Number.isInteger(player) || player < 0 || player >= players) {
         errors.push(`${context}, round ${idx + 1}: sit-out player index ${player} is out of range`);
       }
-      if (seen.has(player)) {
+      if (seenPlayers.has(player)) {
         errors.push(`${context}, round ${idx + 1}: player ${player + 1} both plays and sits out`);
       }
-      seen.add(player);
+      seenPlayers.add(player);
     }
 
-    if (seen.size !== players) {
-      errors.push(`${context}, round ${idx + 1}: accounts for ${seen.size}/${players} players`);
+    if (seenPlayers.size !== players) {
+      errors.push(`${context}, round ${idx + 1}: accounts for ${seenPlayers.size}/${players} players`);
     }
 
-    if (idx > 0) {
-      validateConsecutiveSitOuts(context, schedule[idx - 1], round, idx + 1);
-    }
   });
+
+  if (seenPairs.size < expectedPairCount) {
+    errors.push(`${context}: only covered ${seenPairs.size}/${expectedPairCount} partner pairings`);
+  }
 
   if (!Number.isInteger(points) || points < 16 || points > 24) {
     errors.push(`${context}: points must be 16-24`);
   }
 }
 
-function validateConsecutiveSitOuts(context, previousRound, round, roundNumber) {
-  const previousSitOut = previousRound.sitOut || [];
-  const currentSitOut = new Set(round.sitOut || []);
-  const repeated = previousSitOut.filter(player => currentSitOut.has(player));
-  const activeSlots = (round.matches || []).length * 4;
-
-  if (repeated.length && previousSitOut.length <= activeSlots) {
-    errors.push(`${context}, round ${roundNumber}: player(s) ${repeated.map(player => player + 1).join(', ')} sit out twice in a row`);
-  }
-}
-
 function buildAmericanoSchedule(numPlayers, rotations, courts = 1) {
   const cycles = Math.max(1, Number(rotations) || 1);
-  const maxCourts = Math.max(1, Number(courts) || 1);
-  let base;
-
-  if (numPlayers <= 4) {
-    base = FIXED_4.map(rawToRound);
-  } else if (numPlayers === 5) {
-    base = FIXED_5.map(rawToRound);
-  } else if (numPlayers === 6) {
-    base = FIXED_6.map(rawToRound);
-  } else {
-    const totalRounds = numPlayers % 2 === 0 ? numPlayers - 1 : numPlayers;
-    let previousSitOut = [];
-    const playCounts = new Array(numPlayers).fill(0);
-    const schedule = [];
-    for (let i = 0; i < totalRounds * cycles; i += 1) {
-      const round = buildDynamicRound(numPlayers, i, maxCourts, previousSitOut, playCounts);
-      schedule.push(round);
-      for (const match of round.matches) {
-        for (const player of [...match.a, ...match.b]) {
-          playCounts[player] += 1;
-        }
-      }
-      previousSitOut = round.sitOut;
-    }
-    return schedule;
-  }
-
+  const courtCount = Math.min(Math.max(1, Number(courts) || 1), Math.floor(numPlayers / 4), 4);
+  const base = buildAmericanoRoundSet(numPlayers, courtCount);
   const schedule = [];
+
   for (let cycle = 0; cycle < cycles; cycle += 1) {
     for (const entry of base) {
-      schedule.push(entry);
+      schedule.push(cloneRound(entry));
     }
   }
   return schedule;
 }
 
-function rawToRound(entry) {
-  return { matches: [{ a: entry.a, b: entry.b }], sitOut: entry.sit };
+function buildAmericanoRoundSet(numPlayers, courtCount) {
+  if (numPlayers < 4) return [];
+
+  const pairCount = Math.max(1, courtCount * 2);
+  const matchings = buildPartnerMatchings(numPlayers);
+  if (!matchings.length) return [];
+
+  const matchingSize = matchings[0].length || 1;
+  const blockSize = pairCount / gcd(matchingSize, pairCount);
+  const rounds = [];
+  const seenPairs = [];
+
+  for (let blockStart = 0; blockStart < matchings.length; blockStart += blockSize) {
+    const block = matchings.slice(blockStart, blockStart + blockSize);
+    const blockPairs = block.flat();
+    const isFinalPartialBlock = blockStart + blockSize >= matchings.length
+      && blockPairs.length % pairCount !== 0;
+
+    for (let i = 0; i < blockPairs.length; i += pairCount) {
+      const chunk = blockPairs.slice(i, i + pairCount);
+      const finalChunk = isFinalPartialBlock && i + pairCount >= blockPairs.length;
+      const selected = finalChunk
+        ? fillRoundWithRepeatPairs(chunk, pairCount - chunk.length, seenPairs)
+        : chunk;
+      rounds.push(pairsToRound(selected, numPlayers));
+    }
+
+    seenPairs.push(...blockPairs);
+  }
+
+  return rounds;
 }
 
-function buildDynamicRound(numPlayers, roundIdx, maxCourts, previousSitOut = [], playCounts = []) {
-  const courtCount = Math.min(Math.max(1, maxCourts || 1), Math.floor(numPlayers / 4), 4);
-  const activeCount = courtCount * 4;
-  const previous = new Set(previousSitOut);
-  const active = [];
-  const activeSet = new Set();
+function buildPartnerMatchings(numPlayers) {
+  const players = Array.from({ length: numPlayers }, (_, index) => index);
+  const lineup = numPlayers % 2 === 1 ? [...players, null] : [...players];
+  const matchCount = lineup.length - 1;
+  const half = lineup.length / 2;
+  const matchings = [];
+  let current = lineup.slice();
 
-  const candidates = Array.from({ length: numPlayers }, (_, player) => player)
-    .sort((a, b) => {
-      const previousDiff = Number(previous.has(b)) - Number(previous.has(a));
-      if (previousDiff) return previousDiff;
-      const playDiff = (playCounts[a] || 0) - (playCounts[b] || 0);
-      if (playDiff) return playDiff;
-      return rotateTie(a, roundIdx, numPlayers) - rotateTie(b, roundIdx, numPlayers);
-    });
+  for (let roundIndex = 0; roundIndex < matchCount; roundIndex += 1) {
+    const matches = [];
+    for (let i = 0; i < half; i += 1) {
+      const a = current[i];
+      const b = current[current.length - 1 - i];
+      if (a == null || b == null) continue;
+      matches.push({ a, b, key: pairKey(a, b) });
+    }
+    matchings.push(matches);
 
-  for (const player of candidates) {
-    if (active.length >= activeCount) break;
-    active.push(player);
-    activeSet.add(player);
+    const fixed = current[0];
+    const rest = current.slice(1);
+    rest.unshift(rest.pop());
+    current = [fixed, ...rest];
   }
 
-  const ordered = active
-    .slice()
-    .sort((a, b) => rotateTie(a, roundIdx, numPlayers) - rotateTie(b, roundIdx, numPlayers));
+  return matchings;
+}
+
+function fillRoundWithRepeatPairs(chunk, needed, seenPairs) {
+  if (needed <= 0) return chunk;
+
+  const selected = chunk.slice();
+  const blocked = new Set();
+  for (const pair of selected) {
+    blocked.add(pair.a);
+    blocked.add(pair.b);
+  }
+
+  for (const pair of seenPairs) {
+    if (selected.length >= chunk.length + needed) break;
+    if (selected.some(entry => entry.key === pair.key)) continue;
+    if (blocked.has(pair.a) || blocked.has(pair.b)) continue;
+    selected.push(pair);
+    blocked.add(pair.a);
+    blocked.add(pair.b);
+  }
+
+  return selected;
+}
+
+function pairsToRound(pairs, numPlayers) {
   const matches = [];
-  for (let i = 0; i < ordered.length; i += 4) {
-    const group = ordered.slice(i, i + 4);
+  const activePlayers = new Set();
+  for (let i = 0; i < pairs.length; i += 2) {
+    const first = pairs[i];
+    const second = pairs[i + 1];
+    if (!first || !second) continue;
+    activePlayers.add(first.a);
+    activePlayers.add(first.b);
+    activePlayers.add(second.a);
+    activePlayers.add(second.b);
     matches.push({
-      a: [group[0], group[3]],
-      b: [group[1], group[2]],
+      a: [first.a, first.b],
+      b: [second.a, second.b],
     });
   }
-
   const sitOut = Array.from({ length: numPlayers }, (_, player) => player)
-    .filter(player => !activeSet.has(player));
+    .filter(player => !activePlayers.has(player));
   return { matches, sitOut };
 }
 
-function rotateTie(player, roundIdx, numPlayers) {
-  return ((player - roundIdx) % numPlayers + numPlayers) % numPlayers;
+function cloneRound(round) {
+  return {
+    matches: (round.matches || []).map(match => ({
+      a: [...match.a],
+      b: [...match.b],
+    })),
+    sitOut: [...(round.sitOut || [])],
+  };
+}
+
+function pairKey(a, b) {
+  return a < b ? `${a}-${b}` : `${b}-${a}`;
+}
+
+function gcd(a, b) {
+  let x = Math.abs(a);
+  let y = Math.abs(b);
+  while (y) {
+    [x, y] = [y, x % y];
+  }
+  return x || 1;
 }

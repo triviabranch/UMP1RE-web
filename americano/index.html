@@ -843,12 +843,13 @@
   body[data-page-mode="names"] .names-body {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.25rem;
   }
 
   .names-reset-row {
+    margin-top: 0.7rem;
     display: grid;
     justify-items: center;
-    margin-top: 0.7rem;
     width: 100%;
   }
 
@@ -1645,10 +1646,15 @@
     right: 0.8rem;
     z-index: 20;
     min-height: 34px;
+    min-width: 34px;
     padding: 0.5rem 0.75rem;
     border-radius: 999px;
     font-size: 0.66rem;
     letter-spacing: 0.14em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
   }
 
   .modal {
@@ -1959,6 +1965,11 @@
     }
     .nextup-names {
       font-size: clamp(2.3rem, 4vw, 4rem);
+    }
+    .card-brand.is-landing .card-brand-logo {
+      width: min(18vw, 260px);
+      max-width: 260px;
+      min-width: 0;
     }
     body[data-page-mode="setup"] .screen-head {
       justify-content: center;
@@ -2894,13 +2905,30 @@
   </div>
 </div>
 
+<div class="modal" id="quit-modal" aria-hidden="true">
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="quit-modal-title">
+    <div class="modal-head">
+      <div>
+        <h2 id="quit-modal-title">Quit session?</h2>
+        <div class="page-indicator">End current tournament</div>
+      </div>
+      <button class="btn ghost" id="quit-modal-close" type="button">Close</button>
+    </div>
+    <div class="modal-body" id="quit-modal-body"></div>
+    <div class="modal-actions">
+      <button class="btn secondary" id="quit-modal-cancel" type="button">Cancel</button>
+      <button class="btn primary" id="quit-modal-confirm" type="button">Quit session</button>
+    </div>
+  </div>
+</div>
+
 <div class="app">
   <div class="page-shell">
     <div id="screen-root"></div>
   </div>
 </div>
 
-<script src="app.js?v=2" defer></script>
+<script src="app.js?v=4" defer></script>
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch(() => {});

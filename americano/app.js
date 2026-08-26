@@ -36,7 +36,7 @@ const DEFAULT_CONFIG = {
   playerOptions: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
   courtOptions: [1, 2, 3, 4],
   pointOptions: [16, 17, 18, 19, 20, 21, 22, 23, 24],
-  rotationOptions: [1, 2, 3],
+  rotationOptions: [1, 2, 3, 4],
   minutesPerGame: {
     16: 10,
     17: 11,
@@ -94,6 +94,11 @@ function cacheElements() {
     'skip-modal-close',
     'skip-modal-cancel',
     'skip-modal-confirm',
+    'quit-modal',
+    'quit-modal-body',
+    'quit-modal-close',
+    'quit-modal-cancel',
+    'quit-modal-confirm',
   ].forEach(id => {
     els[id] = document.getElementById(id);
   });
@@ -163,9 +168,16 @@ function bindEvents() {
   els['skip-modal-close'].addEventListener('click', closeSkipModal);
   els['skip-modal-cancel'].addEventListener('click', closeSkipModal);
   els['skip-modal-confirm'].addEventListener('click', confirmSkipRound);
+  els['quit-modal-close'].addEventListener('click', closeQuitModal);
+  els['quit-modal-cancel'].addEventListener('click', closeQuitModal);
+  els['quit-modal-confirm'].addEventListener('click', confirmQuitSession);
 
   window.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
+    if (isQuitModalOpen()) {
+      closeQuitModal();
+      return;
+    }
     if (isSkipModalOpen()) {
       closeSkipModal();
       return;
@@ -182,6 +194,10 @@ function isLeaderboardOpen() {
 
 function isSkipModalOpen() {
   return els['skip-modal'].classList.contains('open');
+}
+
+function isQuitModalOpen() {
+  return els['quit-modal'].classList.contains('open');
 }
 
 function openLeaderboard() {
@@ -233,6 +249,26 @@ function closeSkipModal() {
   state.pendingSkipRoundIndex = null;
   els['skip-modal'].classList.remove('open');
   els['skip-modal'].setAttribute('aria-hidden', 'true');
+}
+
+function openQuitModal() {
+  els['quit-modal-body'].innerHTML = `
+    <div class="notice">
+      This will end the current session, clear the current tournament state, and return to the home screen.
+    </div>
+  `;
+  els['quit-modal'].classList.add('open');
+  els['quit-modal'].setAttribute('aria-hidden', 'false');
+}
+
+function closeQuitModal() {
+  els['quit-modal'].classList.remove('open');
+  els['quit-modal'].setAttribute('aria-hidden', 'true');
+}
+
+function confirmQuitSession() {
+  closeQuitModal();
+  resetTournament();
 }
 
 function confirmSkipRound() {
@@ -309,28 +345,35 @@ function renderPage() {
 function renderCardBrand(variant = 'card') {
   if (variant === 'landing') {
     return `
-      <button class="card-brand is-landing" type="button" data-action="reset-tournament" aria-label="Reset tournament">
+      <div class="card-brand is-landing" aria-label="Americano">
         <img class="card-brand-logo" src="/assets/logo.png" alt="" aria-hidden="true">
         <div class="card-brand-copy">
           <div class="card-brand-title">Americano</div>
         </div>
-      </button>
+      </div>
     `;
   }
 
   return `
-    <button class="card-brand is-card" type="button" data-action="reset-tournament" aria-label="Reset tournament">
+    <div class="card-brand is-card" aria-label="Americano">
       <img class="card-brand-logo" src="/assets/logo.png" alt="" aria-hidden="true">
       <div class="card-brand-copy">
         <div class="card-brand-title">Americano</div>
       </div>
-    </button>
+    </div>
+  `;
+}
+
+function renderQuitButton() {
+  return `
+    <button class="btn ghost small-cta" type="button" data-action="quit-session" aria-label="Quit session">×</button>
   `;
 }
 
 function renderIntroPage() {
   return `
     <section class="screen active">
+      ${renderQuitButton()}
       <div class="landing">
         <div class="landing-card">
           ${renderCardBrand('landing')}
@@ -351,6 +394,7 @@ function renderSetupWizardPage() {
 
   return `
     <section class="screen active">
+      ${renderQuitButton()}
       <div class="play-shell">
         <div class="play-card">
           <div class="setup-modal-head">
@@ -475,6 +519,7 @@ function renderSetupNamesPage() {
 
   return `
     <section class="screen active">
+      ${renderQuitButton()}
       <div class="play-shell">
         <div class="play-card">
           <div class="setup-modal-head">
@@ -530,6 +575,7 @@ function renderScorePage(fixtureIndex) {
 
   return `
     <section class="screen active score-screen">
+      ${renderQuitButton()}
       <div class="play-shell">
         <div class="play-card">
           <div class="play-head">
@@ -611,6 +657,7 @@ function renderRoundOverviewPage(roundIndex = 0) {
 
   return `
     <section class="screen active round-screen">
+      ${renderQuitButton()}
       <div class="play-shell">
         <div class="play-card">
           <div class="play-head">
@@ -1072,10 +1119,8 @@ function attachPageHandlers() {
     });
   });
 
-  document.querySelectorAll('[data-action="reset-tournament"]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      resetTournament();
-    });
+  document.querySelectorAll('[data-action="quit-session"]').forEach(btn => {
+    btn.addEventListener('click', openQuitModal);
   });
 }
 
@@ -1201,36 +1246,13 @@ function getMissedFixtures() {
 function buildAmericanoSchedule(numPlayers, rotations, courts = 1) {
   const cycles = Math.max(1, Number(rotations) || 1);
   const maxCourts = Math.max(1, Number(courts) || 1);
-  let base;
-
-  if (numPlayers <= 4) {
-    base = FIXED_4.map(rawToRound);
-  } else if (numPlayers === 5) {
-    base = FIXED_5.map(rawToRound);
-  } else if (numPlayers === 6) {
-    base = FIXED_6.map(rawToRound);
-  } else {
-    const totalRounds = numPlayers % 2 === 0 ? numPlayers - 1 : numPlayers;
-    let previousSitOut = [];
-    const playCounts = new Array(numPlayers).fill(0);
-    const schedule = [];
-    for (let i = 0; i < totalRounds * cycles; i += 1) {
-      const round = buildDynamicRound(numPlayers, i, maxCourts, previousSitOut, playCounts);
-      schedule.push(round);
-      for (const match of round.matches) {
-        for (const player of [...match.a, ...match.b]) {
-          playCounts[player] += 1;
-        }
-      }
-      previousSitOut = round.sitOut;
-    }
-    return schedule;
-  }
-
+  const courtCount = Math.min(maxCourts, Math.floor(numPlayers / 4), 4);
+  const base = buildAmericanoRoundSet(numPlayers, courtCount);
   const schedule = [];
+
   for (let cycle = 0; cycle < cycles; cycle += 1) {
     for (const entry of base) {
-      schedule.push(entry);
+      schedule.push(cloneRound(entry));
     }
   }
   return schedule;
@@ -1273,51 +1295,130 @@ function formatMinutes(minutes) {
   return `~${hours} hr ${remainder} mins`;
 }
 
-function rawToRound(entry) {
-  return { matches: [{ a: entry.a, b: entry.b }], sitOut: entry.sit };
+function buildAmericanoRoundSet(numPlayers, courtCount) {
+  if (numPlayers < 4) return [];
+
+  const pairCount = Math.max(1, courtCount * 2);
+  const matchings = buildPartnerMatchings(numPlayers);
+  if (!matchings.length) return [];
+
+  const matchingSize = matchings[0].length || 1;
+  const blockSize = pairCount / gcd(matchingSize, pairCount);
+  const rounds = [];
+  const seenPairs = [];
+
+  for (let blockStart = 0; blockStart < matchings.length; blockStart += blockSize) {
+    const block = matchings.slice(blockStart, blockStart + blockSize);
+    const blockPairs = block.flat();
+    const isFinalPartialBlock = blockStart + blockSize >= matchings.length
+      && blockPairs.length % pairCount !== 0;
+
+    for (let i = 0; i < blockPairs.length; i += pairCount) {
+      const chunk = blockPairs.slice(i, i + pairCount);
+      const finalChunk = isFinalPartialBlock && i + pairCount >= blockPairs.length;
+      const selected = finalChunk
+        ? fillRoundWithRepeatPairs(chunk, pairCount - chunk.length, seenPairs)
+        : chunk;
+      rounds.push(pairsToRound(selected, numPlayers));
+    }
+
+    seenPairs.push(...blockPairs);
+  }
+
+  return rounds;
 }
 
-function buildDynamicRound(numPlayers, roundIdx, maxCourts, previousSitOut = [], playCounts = []) {
-  const courtCount = Math.min(Math.max(1, maxCourts || 1), Math.floor(numPlayers / 4), 4);
-  const activeCount = courtCount * 4;
-  const previous = new Set(previousSitOut);
-  const active = [];
-  const activeSet = new Set();
+function buildPartnerMatchings(numPlayers) {
+  const players = Array.from({ length: numPlayers }, (_, index) => index);
+  const lineup = numPlayers % 2 === 1 ? [...players, null] : [...players];
+  const matchCount = lineup.length - 1;
+  const half = lineup.length / 2;
+  const matchings = [];
+  let current = lineup.slice();
 
-  const candidates = Array.from({ length: numPlayers }, (_, player) => player)
-    .sort((a, b) => {
-      const previousDiff = Number(previous.has(b)) - Number(previous.has(a));
-      if (previousDiff) return previousDiff;
-      const playDiff = (playCounts[a] || 0) - (playCounts[b] || 0);
-      if (playDiff) return playDiff;
-      return rotateTie(a, roundIdx, numPlayers) - rotateTie(b, roundIdx, numPlayers);
-    });
+  for (let roundIndex = 0; roundIndex < matchCount; roundIndex += 1) {
+    const matches = [];
+    for (let i = 0; i < half; i += 1) {
+      const a = current[i];
+      const b = current[current.length - 1 - i];
+      if (a == null || b == null) continue;
+      matches.push({ a, b, key: pairKey(a, b) });
+    }
+    matchings.push(matches);
 
-  for (const player of candidates) {
-    if (active.length >= activeCount) break;
-    active.push(player);
-    activeSet.add(player);
+    const fixed = current[0];
+    const rest = current.slice(1);
+    rest.unshift(rest.pop());
+    current = [fixed, ...rest];
   }
 
-  const ordered = active
-    .slice()
-    .sort((a, b) => rotateTie(a, roundIdx, numPlayers) - rotateTie(b, roundIdx, numPlayers));
+  return matchings;
+}
+
+function fillRoundWithRepeatPairs(chunk, needed, seenPairs) {
+  if (needed <= 0) return chunk;
+
+  const selected = chunk.slice();
+  const blocked = new Set();
+  for (const pair of selected) {
+    blocked.add(pair.a);
+    blocked.add(pair.b);
+  }
+
+  for (const pair of seenPairs) {
+    if (selected.length >= chunk.length + needed) break;
+    if (selected.some(entry => entry.key === pair.key)) continue;
+    if (blocked.has(pair.a) || blocked.has(pair.b)) continue;
+    selected.push(pair);
+    blocked.add(pair.a);
+    blocked.add(pair.b);
+  }
+
+  return selected;
+}
+
+function pairsToRound(pairs, numPlayers) {
   const matches = [];
-  for (let i = 0; i < ordered.length; i += 4) {
-    const group = ordered.slice(i, i + 4);
+  const activePlayers = new Set();
+  for (let i = 0; i < pairs.length; i += 2) {
+    const first = pairs[i];
+    const second = pairs[i + 1];
+    if (!first || !second) continue;
+    activePlayers.add(first.a);
+    activePlayers.add(first.b);
+    activePlayers.add(second.a);
+    activePlayers.add(second.b);
     matches.push({
-      a: [group[0], group[3]],
-      b: [group[1], group[2]],
+      a: [first.a, first.b],
+      b: [second.a, second.b],
     });
   }
-
   const sitOut = Array.from({ length: numPlayers }, (_, player) => player)
-    .filter(player => !activeSet.has(player));
+    .filter(player => !activePlayers.has(player));
   return { matches, sitOut };
 }
 
-function rotateTie(player, roundIdx, numPlayers) {
-  return ((player - roundIdx) % numPlayers + numPlayers) % numPlayers;
+function cloneRound(round) {
+  return {
+    matches: (round.matches || []).map(match => ({
+      a: [...match.a],
+      b: [...match.b],
+    })),
+    sitOut: [...(round.sitOut || [])],
+  };
+}
+
+function pairKey(a, b) {
+  return a < b ? `${a}-${b}` : `${b}-${a}`;
+}
+
+function gcd(a, b) {
+  let x = Math.abs(a);
+  let y = Math.abs(b);
+  while (y) {
+    [x, y] = [y, x % y];
+  }
+  return x || 1;
 }
 
 function buildFixtureOrder(schedule) {
