@@ -306,10 +306,21 @@ function renderPage() {
   return renderRoundOverviewPage(state.currentRoundIndex);
 }
 
-function renderCardBrand() {
+function renderCardBrand(variant = 'card') {
+  if (variant === 'landing') {
+    return `
+      <button class="card-brand is-landing" type="button" data-action="reset-tournament" aria-label="Reset tournament">
+        <img class="card-brand-logo" src="/assets/logo.png" alt="" aria-hidden="true">
+        <div class="card-brand-copy">
+          <div class="card-brand-title">Americano</div>
+        </div>
+      </button>
+    `;
+  }
+
   return `
-    <button class="card-brand" type="button" data-action="reset-tournament" aria-label="Reset tournament">
-      <img class="card-brand-logo" src="/assets/logo.png" alt="Ump1re">
+    <button class="card-brand is-card" type="button" data-action="reset-tournament" aria-label="Reset tournament">
+      <img class="card-brand-logo" src="/assets/logo.png" alt="" aria-hidden="true">
       <div class="card-brand-copy">
         <div class="card-brand-title">Americano</div>
       </div>
@@ -322,7 +333,7 @@ function renderIntroPage() {
     <section class="screen active">
       <div class="landing">
         <div class="landing-card">
-          ${renderCardBrand()}
+          ${renderCardBrand('landing')}
         </div>
         <div class="landing-actions">
           <button class="btn primary" data-action="start">Start</button>

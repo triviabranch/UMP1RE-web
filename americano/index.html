@@ -109,12 +109,13 @@
     border: 0;
     background: transparent;
     display: inline-flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.7rem;
+    gap: 0.4rem;
     width: fit-content;
     margin-inline: auto;
-    padding: 0.15rem 0.35rem;
+    padding: 0.15rem 0.25rem;
     text-decoration: none;
     color: inherit;
     cursor: pointer;
@@ -127,7 +128,7 @@
   }
 
   .card-brand-logo {
-    width: 44px;
+    width: clamp(4.2rem, 13vw, 5.6rem);
     height: auto;
     display: block;
     filter: drop-shadow(0 10px 24px rgba(0,0,0,0.3));
@@ -135,9 +136,9 @@
 
   .card-brand-copy {
     display: grid;
-    gap: 0.08rem;
+    gap: 0.02rem;
     min-width: 0;
-    text-align: left;
+    text-align: center;
   }
 
   .card-brand-kicker {
@@ -150,10 +151,19 @@
 
   .card-brand-title {
     font-family: var(--display);
-    font-size: clamp(1.4rem, 5vw, 1.8rem);
+    font-size: clamp(1.15rem, 4.6vw, 1.55rem);
     line-height: 0.92;
     letter-spacing: 0.05em;
     color: var(--lime);
+  }
+
+  .card-brand.is-landing .card-brand-logo {
+    width: 75vw;
+    max-width: 75vw;
+  }
+
+  .card-brand.is-landing .card-brand-title {
+    font-size: clamp(1.6rem, 6vw, 2.2rem);
   }
 
   .brand {
