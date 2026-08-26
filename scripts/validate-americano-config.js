@@ -43,8 +43,8 @@ const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 const errors = [];
 let checked = 0;
 
-validateRange('playerOptions', config.playerOptions, 4, 12);
-validateRange('courtOptions', config.courtOptions, 1, 3);
+validateRange('playerOptions', config.playerOptions, 4, 16);
+validateRange('courtOptions', config.courtOptions, 1, 4);
 validateRange('pointOptions', config.pointOptions, 16, 24);
 validateRange('rotationOptions', config.rotationOptions, 1, 12);
 
@@ -205,7 +205,7 @@ function rawToRound(entry) {
 }
 
 function buildDynamicRound(numPlayers, roundIdx, maxCourts, previousSitOut = [], playCounts = []) {
-  const courtCount = Math.min(Math.max(1, maxCourts || 1), Math.floor(numPlayers / 4), 3);
+  const courtCount = Math.min(Math.max(1, maxCourts || 1), Math.floor(numPlayers / 4), 4);
   const activeCount = courtCount * 4;
   const previous = new Set(previousSitOut);
   const active = [];

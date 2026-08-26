@@ -33,8 +33,8 @@ const FIXED_6 = [
 ];
 
 const DEFAULT_CONFIG = {
-  playerOptions: [4, 5, 6, 7, 8, 9, 10, 11, 12],
-  courtOptions: [1, 2, 3],
+  playerOptions: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+  courtOptions: [1, 2, 3, 4],
   pointOptions: [16, 17, 18, 19, 20, 21, 22, 23, 24],
   rotationOptions: [1, 2, 3],
   minutesPerGame: {
@@ -94,7 +94,6 @@ function cacheElements() {
     'skip-modal-close',
     'skip-modal-cancel',
     'skip-modal-confirm',
-    'topbar-copy',
   ].forEach(id => {
     els[id] = document.getElementById(id);
   });
@@ -113,8 +112,8 @@ async function loadAmericanoConfig() {
 
 function normalizeConfig(raw) {
   const next = {
-    playerOptions: normalizeNumberList(raw?.playerOptions, DEFAULT_CONFIG.playerOptions, 4, 12),
-    courtOptions: normalizeNumberList(raw?.courtOptions, DEFAULT_CONFIG.courtOptions, 1, 3),
+    playerOptions: normalizeNumberList(raw?.playerOptions, DEFAULT_CONFIG.playerOptions, 4, 16),
+    courtOptions: normalizeNumberList(raw?.courtOptions, DEFAULT_CONFIG.courtOptions, 1, 4),
     pointOptions: normalizeNumberList(raw?.pointOptions, DEFAULT_CONFIG.pointOptions, 16, 24),
     rotationOptions: normalizeNumberList(raw?.rotationOptions, DEFAULT_CONFIG.rotationOptions, 1, 12),
     minutesPerGame: {},
@@ -157,14 +156,6 @@ function initDefaults() {
 }
 
 function bindEvents() {
-  const brand = document.querySelector('.brand');
-  if (brand) {
-    brand.addEventListener('click', e => {
-      e.preventDefault();
-      resetTournament();
-    });
-  }
-
   if (els['leaderboard-btn']) {
     els['leaderboard-btn'].addEventListener('click', openLeaderboard);
   }
@@ -302,7 +293,6 @@ function render() {
   }
   els['screen-root'].innerHTML = renderPage();
   attachPageHandlers();
-  updateTopbarCopy();
 }
 
 function renderPage() {
@@ -316,13 +306,23 @@ function renderPage() {
   return renderRoundOverviewPage(state.currentRoundIndex);
 }
 
+function renderCardBrand() {
+  return `
+    <button class="card-brand" type="button" data-action="reset-tournament" aria-label="Reset tournament">
+      <img class="card-brand-logo" src="/assets/logo.png" alt="Ump1re">
+      <div class="card-brand-copy">
+        <div class="card-brand-title">Americano</div>
+      </div>
+    </button>
+  `;
+}
+
 function renderIntroPage() {
   return `
     <section class="screen active">
       <div class="landing">
         <div class="landing-card">
-          <img class="landing-logo" src="/assets/logo.png" alt="Ump1re">
-          <h2>Americano</h2>
+          ${renderCardBrand()}
         </div>
         <div class="landing-actions">
           <button class="btn primary" data-action="start">Start</button>
@@ -343,6 +343,7 @@ function renderSetupWizardPage() {
       <div class="play-shell">
         <div class="play-card">
           <div class="setup-modal-head">
+            ${renderCardBrand()}
             <div class="setup-kicker">Setup</div>
             <h2>${escapeHtml(step.title)}</h2>
             <p>${escapeHtml(step.copy)}</p>
@@ -355,7 +356,7 @@ function renderSetupWizardPage() {
           </div>
           <div class="screen-actions setup-actions">
             <button class="btn ghost" data-action="back">Back</button>
-            <button class="btn ${isLastStep ? 'primary' : 'secondary'}" data-action="setup-next">
+            <button class="btn primary" data-action="setup-next">
               ${isLastStep ? 'Next: names' : 'Next'}
             </button>
           </div>
@@ -467,6 +468,7 @@ function renderSetupNamesPage() {
       <div class="play-shell">
         <div class="play-card">
           <div class="setup-modal-head">
+            ${renderCardBrand()}
             <div class="setup-kicker">Players</div>
             <h2>Names</h2>
             <div class="setup-stepper" aria-label="Setup progress">
@@ -521,6 +523,7 @@ function renderScorePage(fixtureIndex) {
       <div class="play-shell">
         <div class="play-card">
           <div class="play-head">
+            ${renderCardBrand()}
             <div class="play-kicker">Scoring</div>
             <h2>${roundLabel}</h2>
           </div>
@@ -600,6 +603,7 @@ function renderRoundOverviewPage(roundIndex = 0) {
       <div class="play-shell">
         <div class="play-card">
           <div class="play-head">
+            ${renderCardBrand()}
             <div class="play-kicker">Round</div>
             <h2>${escapeHtml(roundLabel)}</h2>
           </div>
@@ -1056,6 +1060,12 @@ function attachPageHandlers() {
       openFixture(fixtureIndex);
     });
   });
+
+  document.querySelectorAll('[data-action="reset-tournament"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      resetTournament();
+    });
+  });
 }
 
 function buildTournament() {
@@ -1152,27 +1162,6 @@ function scoreButtonsHtml(side, draft) {
   return Array.from({ length: state.pointsPerGame + 1 }, (_, value) => `
     <button class="score-btn ${draft[side] === value ? `active ${activeClass}` : ''}" type="button" data-value="${value}">${value}</button>
   `).join('');
-}
-
-function updateTopbarCopy() {
-  if (!els['topbar-copy']) return;
-  if (!state.built) {
-    if (state.pageIndex === 2) {
-      els['topbar-copy'].textContent = 'Names';
-      return;
-    }
-    const step = getSetupSteps()[state.setupStep];
-    els['topbar-copy'].textContent = step
-      ? step.title
-      : 'Set up the Americano tournament.';
-    return;
-  }
-  if (Number.isInteger(state.activeFixtureIndex)) {
-    els['topbar-copy'].textContent = fixtureLabel(state.fixtures[state.activeFixtureIndex]);
-    return;
-  }
-  const round = state.schedule[state.currentRoundIndex];
-  els['topbar-copy'].textContent = `Round ${state.currentRoundIndex + 1} · ${round?.matches?.length || 0} courts`;
 }
 
 function countSavedFixtures() {
@@ -1287,7 +1276,7 @@ function rawToRound(entry) {
 }
 
 function buildDynamicRound(numPlayers, roundIdx, maxCourts, previousSitOut = [], playCounts = []) {
-  const courtCount = Math.min(Math.max(1, maxCourts || 1), Math.floor(numPlayers / 4), 3);
+  const courtCount = Math.min(Math.max(1, maxCourts || 1), Math.floor(numPlayers / 4), 4);
   const activeCount = courtCount * 4;
   const previous = new Set(previousSitOut);
   const active = [];

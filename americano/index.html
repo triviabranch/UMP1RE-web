@@ -104,6 +104,58 @@
     box-shadow: var(--shadow);
   }
 
+  .card-brand {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.7rem;
+    width: fit-content;
+    margin-inline: auto;
+    padding: 0.15rem 0.35rem;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  .card-brand:focus-visible {
+    outline: 2px solid rgba(217,255,51,0.45);
+    outline-offset: 3px;
+    border-radius: 999px;
+  }
+
+  .card-brand-logo {
+    width: 44px;
+    height: auto;
+    display: block;
+    filter: drop-shadow(0 10px 24px rgba(0,0,0,0.3));
+  }
+
+  .card-brand-copy {
+    display: grid;
+    gap: 0.08rem;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .card-brand-kicker {
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .card-brand-title {
+    font-family: var(--display);
+    font-size: clamp(1.4rem, 5vw, 1.8rem);
+    line-height: 0.92;
+    letter-spacing: 0.05em;
+    color: var(--lime);
+  }
+
   .brand {
     display: inline-flex;
     flex-direction: column;
@@ -324,6 +376,9 @@
     width: min(760px, 100%);
     padding: 0;
     text-align: center;
+    display: grid;
+    justify-items: center;
+    gap: 0.6rem;
   }
 
   .landing-logo {
@@ -434,6 +489,7 @@
     gap: 0.45rem;
     padding: 0.9rem 0.95rem 0.75rem;
     text-align: center;
+    justify-items: center;
     border-bottom: 1px solid var(--line);
   }
 
@@ -626,6 +682,13 @@
   }
 
   .choice-card.active .choice-value {
+    color: var(--lime);
+  }
+
+  .choice-card.active[data-player-choice="4"] .choice-value,
+  .choice-card.active[data-player-choice="8"] .choice-value,
+  .choice-card.active[data-player-choice="12"] .choice-value,
+  .choice-card.active[data-player-choice="16"] .choice-value {
     color: var(--lime);
   }
 
@@ -2810,15 +2873,6 @@
 </div>
 
 <div class="app">
-  <header class="topbar">
-    <a class="brand" href="/" aria-label="Ump1re home">
-      <img src="/assets/logo.png" alt="Ump1re">
-    </a>
-    <div class="topbar-copy">
-      <h1>Americano</h1>
-    </div>
-  </header>
-
   <div class="page-shell">
     <div id="screen-root"></div>
   </div>
