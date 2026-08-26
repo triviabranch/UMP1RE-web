@@ -336,16 +336,12 @@ function renderSetupWizardPage() {
   const steps = getSetupSteps();
   const step = steps[state.setupStep] || steps[0];
   const isLastStep = state.setupStep >= steps.length - 1;
-  const stepDots = steps.map((entry, idx) => `
-    <button class="setup-step-dot ${idx === state.setupStep ? 'active' : ''}" type="button" data-setup-step="${idx}" aria-label="Go to ${escapeHtml(entry.title)}">
-      <span>${idx + 1}</span>
-    </button>
-  `).join('');
+  const stepDots = buildSetupStepper(state.setupStep);
 
   return `
     <section class="screen active">
-      <div class="setup-modal-shell">
-        <div class="setup-modal-card">
+      <div class="play-shell">
+        <div class="play-card">
           <div class="setup-modal-head">
             <div class="setup-kicker">Setup</div>
             <h2>${escapeHtml(step.title)}</h2>
@@ -354,10 +350,10 @@ function renderSetupWizardPage() {
               ${stepDots}
             </div>
           </div>
-          <div class="setup-modal-body">
+          <div class="play-body setup-body">
             ${step.html}
           </div>
-          <div class="setup-modal-actions">
+          <div class="screen-actions setup-actions">
             <button class="btn ghost" data-action="back">Back</button>
             <button class="btn ${isLastStep ? 'primary' : 'secondary'}" data-action="setup-next">
               ${isLastStep ? 'Next: names' : 'Next'}
@@ -464,16 +460,20 @@ function renderSetupNamesPage() {
       <input type="text" maxlength="24" value="${escapeHtml(name)}" data-player-index="${i}" aria-label="Player ${i + 1} name">
     </div>
   `).join('');
+  const stepDots = buildSetupStepper(4);
 
   return `
     <section class="screen active">
-      <div class="setup-modal-shell">
-        <div class="setup-modal-card">
+      <div class="play-shell">
+        <div class="play-card">
           <div class="setup-modal-head">
             <div class="setup-kicker">Players</div>
             <h2>Names</h2>
+            <div class="setup-stepper" aria-label="Setup progress">
+              ${stepDots}
+            </div>
           </div>
-          <div class="setup-modal-body names-body">
+          <div class="play-body names-body">
             <div class="choice-group">
               <div class="choice-label">Edit all ${state.numPlayers} players</div>
               <div class="player-grid player-grid-two-col">
@@ -484,7 +484,7 @@ function renderSetupNamesPage() {
               </div>
             </div>
           </div>
-          <div class="setup-modal-actions names-actions">
+          <div class="screen-actions names-actions">
             <button class="btn ghost" data-action="back">Back</button>
             <button class="btn primary" data-action="build">Start tournament</button>
           </div>
@@ -492,6 +492,17 @@ function renderSetupNamesPage() {
       </div>
     </section>
   `;
+}
+
+function buildSetupStepper(activeIndex) {
+  const labels = [...getSetupSteps().map(step => step.title), 'Names'];
+  return labels.map((label, idx) => {
+    const interactive = idx < labels.length - 1;
+    return `
+      <button class="setup-step-dot ${idx === activeIndex ? 'active' : ''}" type="button" ${interactive ? `data-setup-step="${idx}"` : 'disabled'} aria-label="Go to ${escapeHtml(label)}">
+      </button>
+    `;
+  }).join('');
 }
 
 function renderScorePage(fixtureIndex) {
