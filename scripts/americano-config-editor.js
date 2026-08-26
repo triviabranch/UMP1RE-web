@@ -11,20 +11,26 @@ const port = Number(process.env.PORT || 4174);
 const host = process.env.HOST || '127.0.0.1';
 
 const optionCatalog = {
-  playerOptions: [4, 5, 6, 8, 10, 12, 14, 16],
-  courtOptions: [1, 2, 3, 4],
-  pointOptions: [8, 12, 16, 21, 24, 32],
+  playerOptions: [4, 5, 6, 7, 8, 9, 10, 11, 12],
+  courtOptions: [1, 2, 3],
+  pointOptions: [16, 17, 18, 19, 20, 21, 22, 23, 24],
   rotationOptions: [1, 2, 3, 4, 5, 6],
 };
 
 const defaultConfig = {
-  playerOptions: [4, 5, 6, 8, 10, 12],
+  playerOptions: [4, 5, 6, 7, 8, 9, 10, 11, 12],
   courtOptions: [1, 2, 3],
-  pointOptions: [16, 21, 24],
+  pointOptions: [16, 17, 18, 19, 20, 21, 22, 23, 24],
   rotationOptions: [1, 2, 3],
   minutesPerGame: {
     16: 10,
+    17: 11,
+    18: 11,
+    19: 12,
+    20: 13,
     21: 13,
+    22: 14,
+    23: 14,
     24: 15,
   },
 };

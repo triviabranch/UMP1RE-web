@@ -28,18 +28,24 @@ const FIXED_6 = [
   { a: [0, 2], b: [1, 3], sit: [4, 5] },
   { a: [0, 5], b: [3, 4], sit: [1, 2] },
   { a: [1, 2], b: [3, 5], sit: [0, 4] },
-  { a: [0, 3], b: [2, 4], sit: [1, 5] },
   { a: [0, 1], b: [4, 5], sit: [2, 3] },
+  { a: [0, 3], b: [2, 4], sit: [1, 5] },
 ];
 
 const DEFAULT_CONFIG = {
-  playerOptions: [4, 5, 6, 8, 10, 12],
+  playerOptions: [4, 5, 6, 7, 8, 9, 10, 11, 12],
   courtOptions: [1, 2, 3],
-  pointOptions: [16, 21, 24],
+  pointOptions: [16, 17, 18, 19, 20, 21, 22, 23, 24],
   rotationOptions: [1, 2, 3],
   minutesPerGame: {
     16: 10,
+    17: 11,
+    18: 11,
+    19: 12,
+    20: 13,
     21: 13,
+    22: 14,
+    23: 14,
     24: 15,
   },
 };
@@ -82,6 +88,7 @@ function cacheElements() {
     'leaderboard-body',
     'leaderboard-close',
     'leaderboard-subtitle',
+    'leaderboard-actions',
     'skip-modal',
     'skip-modal-body',
     'skip-modal-close',
@@ -106,9 +113,9 @@ async function loadAmericanoConfig() {
 
 function normalizeConfig(raw) {
   const next = {
-    playerOptions: normalizeNumberList(raw?.playerOptions, DEFAULT_CONFIG.playerOptions, 4, 32),
-    courtOptions: normalizeNumberList(raw?.courtOptions, DEFAULT_CONFIG.courtOptions, 1, 8),
-    pointOptions: normalizeNumberList(raw?.pointOptions, DEFAULT_CONFIG.pointOptions, 1, 99),
+    playerOptions: normalizeNumberList(raw?.playerOptions, DEFAULT_CONFIG.playerOptions, 4, 12),
+    courtOptions: normalizeNumberList(raw?.courtOptions, DEFAULT_CONFIG.courtOptions, 1, 3),
+    pointOptions: normalizeNumberList(raw?.pointOptions, DEFAULT_CONFIG.pointOptions, 16, 24),
     rotationOptions: normalizeNumberList(raw?.rotationOptions, DEFAULT_CONFIG.rotationOptions, 1, 12),
     minutesPerGame: {},
   };
@@ -200,6 +207,10 @@ function closeLeaderboard() {
   }
   els['leaderboard-modal'].classList.remove('open');
   els['leaderboard-modal'].setAttribute('aria-hidden', 'true');
+  if (els['leaderboard-actions']) {
+    els['leaderboard-actions'].hidden = true;
+    els['leaderboard-actions'].innerHTML = '';
+  }
   state.pageIndex = state.returnPageIndex;
   render();
   if (returnFocus && !returnFocus.hidden) {
@@ -314,7 +325,7 @@ function renderIntroPage() {
           <h2>Americano</h2>
         </div>
         <div class="landing-actions">
-          <button class="btn primary" data-action="start">Start an Americano</button>
+          <button class="btn primary" data-action="start">Start</button>
         </div>
       </div>
     </section>
@@ -473,7 +484,7 @@ function renderSetupNamesPage() {
               ${players}
             </div>
           </div>
-          <div class="names-actions">
+          <div class="screen-actions names-actions">
             <button class="btn ghost" data-action="back">Back</button>
             <button class="btn secondary" data-action="fill" type="button">Reset names</button>
             <button class="btn primary" data-action="build">Start tournament</button>
@@ -496,7 +507,7 @@ function renderScorePage(fixtureIndex) {
   const scoreB = Number.isInteger(draft.b) ? draft.b : '—';
 
   return `
-    <section class="screen active">
+    <section class="screen active score-screen">
       <div class="screen-head">
         <div>
           <h2>${roundLabel}</h2>
@@ -525,10 +536,9 @@ function renderScorePage(fixtureIndex) {
                 <div class="score-grid" style="--score-cols:${cols};" data-score-grid="b"></div>
               </div>
             </div>
-            <div class="round-actions score-actions">
+            <div class="screen-actions score-actions">
               <button class="btn ghost" data-action="back">Back</button>
-              <button class="btn secondary" data-action="leaderboard" type="button">Leaderboard</button>
-              <button class="btn primary" data-action="save">Next round</button>
+              <button class="btn primary" data-action="save">Submit score</button>
             </div>
           </div>
         </div>
@@ -544,18 +554,8 @@ function renderRoundOverviewPage(roundIndex = 0) {
   const round = state.schedule[safeRoundIndex];
   const roundLabel = `Round ${safeRoundIndex + 1}/${state.schedule.length}`;
   const roundFixtures = state.fixtures.filter((fixture) => fixture.roundIndex === safeRoundIndex);
-  const sit = round.sitOut.length ? round.sitOut.map(i => state.players[i]).join(', ') : 'None';
-
-  const roundTabs = state.schedule.map((entry, idx) => {
-    const fixtures = state.fixtures.filter((fixture) => fixture.roundIndex === idx);
-    const saved = fixtures.filter((fixture) => state.scores[fixture.fixtureIndex]).length;
-    return `
-      <button class="round-tab ${idx === safeRoundIndex ? 'active' : ''}" type="button" data-round-choice="${idx}">
-        Round ${idx + 1}
-        <span class="round-tab-count">${saved}/${fixtures.length}</span>
-      </button>
-    `;
-  }).join('');
+  const sit = round.sitOut.length ? round.sitOut.map(i => state.players[i]).join(', ') : '';
+  const isFirstRound = safeRoundIndex === 0;
 
   const fixtureCards = roundFixtures.map((fixture) => {
     const saved = state.scores[fixture.fixtureIndex];
@@ -564,37 +564,46 @@ function renderRoundOverviewPage(roundIndex = 0) {
     return `
       <button class="schedule-item fixture-card ${saved ? 'completed' : ''}" type="button" data-open-fixture="${fixture.fixtureIndex}">
         <div class="fixture-card-court">Court ${fixture.courtIndex + 1}</div>
-        <div class="fixture-card-team">${escapeHtml(teamA)}</div>
+        <div class="fixture-card-team team-a">${escapeHtml(teamA)}</div>
         <div class="fixture-card-vs">vs</div>
-        <div class="fixture-card-team">${escapeHtml(teamB)}</div>
-        <div class="fixture-card-status">${saved ? `Saved ${saved.scoreA} - ${saved.scoreB}` : 'Open scoring'}</div>
+        <div class="fixture-card-team team-b">${escapeHtml(teamB)}</div>
+        ${saved ? `
+        <div class="fixture-card-score" aria-label="Saved score">
+          <span class="fixture-card-score-value a">${saved.scoreA}</span>
+          <span class="fixture-card-score-separator">:</span>
+          <span class="fixture-card-score-value b">${saved.scoreB}</span>
+        </div>
+        <div class="fixture-card-status">Saved score</div>
+        ` : `
+        <div class="fixture-card-status">Open scoring</div>
+        `}
       </button>
     `;
   }).join('');
 
   return `
-    <section class="screen active">
+    <section class="screen active round-screen">
       <div class="screen-head">
         <div>
           <h2>${escapeHtml(roundLabel)}</h2>
-          <p>Tap a court to open scoring.</p>
         </div>
       </div>
-      <div class="content leaderboard-page">
-        <div class="round-nav">
-          ${roundTabs}
-        </div>
-        <div class="round-sitout">
-          <span>Sitting out</span>
-          <strong>${escapeHtml(sit)}</strong>
-        </div>
+      <div class="content round-page">
         <div class="schedule-list">
           ${fixtureCards}
         </div>
+        ${sit ? `
+        <div class="round-sitout-card">
+          <div class="round-sitout-label">Sitting out</div>
+          <div class="round-sitout-value">${escapeHtml(sit)}</div>
+        </div>
+        ` : ''}
+        <div class="round-leaderboard-cta">
+          <button class="btn secondary" data-action="leaderboard" type="button">Leaderboard</button>
+        </div>
       </div>
-      <div class="round-actions">
-        <button class="btn ghost" data-action="back">Back</button>
-        <button class="btn secondary" data-action="leaderboard" type="button">Leaderboard</button>
+      <div class="screen-actions round-actions">
+        <button class="btn ghost" data-action="${isFirstRound ? 'back' : 'prev-round'}">${isFirstRound ? 'Back' : 'Previous round'}</button>
         <button class="btn primary" data-action="next-round">Next round</button>
       </div>
     </section>
@@ -612,7 +621,6 @@ function renderLeaderboard() {
 
   const standings = calcAmericanoStandings(state.numPlayers, state.fixtures, state.scores);
   const completed = countSavedFixtures();
-  const maxPts = standings[0]?.points ?? 0;
   const missed = getMissedFixtures();
 
   const missedHtml = missed.length
@@ -641,23 +649,20 @@ function renderLeaderboard() {
           <tr>
             <th>Rank</th>
             <th>Player</th>
-            <th>Points</th>
-            <th>Wins</th>
             <th>Played</th>
-            <th>Avg</th>
+            <th>Won</th>
+            <th>Points</th>
           </tr>
         </thead>
         <tbody>
           ${standings.map((row, idx) => {
-            const avg = row.played ? (row.points / row.played).toFixed(1) : '0.0';
             return `
               <tr class="${idx === 0 && completed ? 'current-row' : ''}">
-                <td class="rank">${idx + 1}${row.points === maxPts && maxPts > 0 ? ' ▲' : ''}</td>
+                <td class="rank">${idx + 1}</td>
                 <td>${escapeHtml(state.players[row.playerIdx])}</td>
-                <td>${row.points}</td>
-                <td>${row.wins}</td>
                 <td>${row.played}</td>
-                <td>${avg}</td>
+                <td>${row.wins}</td>
+                <td>${row.points}</td>
               </tr>
             `;
           }).join('')}
@@ -665,6 +670,181 @@ function renderLeaderboard() {
       </table>
     </div>
   `;
+  if (completed === state.fixtures.length) {
+    if (els['leaderboard-actions']) {
+      els['leaderboard-actions'].hidden = false;
+      els['leaderboard-actions'].innerHTML = `
+        <div class="leaderboard-share">
+          <div class="leaderboard-share-copy">Share the current Americano standings.</div>
+          <div class="leaderboard-share-actions">
+            <button class="btn secondary" type="button" data-share-leaderboard="whatsapp">WhatsApp</button>
+            <button class="btn secondary" type="button" data-share-leaderboard="instagram">Instagram</button>
+          </div>
+          <div class="leaderboard-share-status" data-share-status>Choose WhatsApp for text or Instagram for an image.</div>
+        </div>
+      `;
+    }
+    bindLeaderboardShareActions(standings);
+  } else if (els['leaderboard-actions']) {
+    els['leaderboard-actions'].hidden = true;
+    els['leaderboard-actions'].innerHTML = '';
+  }
+}
+
+function bindLeaderboardShareActions(standings) {
+  document.querySelectorAll('[data-share-leaderboard]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const target = btn.getAttribute('data-share-leaderboard');
+      if (target === 'whatsapp') {
+        shareLeaderboardToWhatsApp(standings);
+        return;
+      }
+      if (target === 'instagram') {
+        await shareLeaderboardToInstagram(standings);
+      }
+    });
+  });
+}
+
+function updateLeaderboardShareStatus(message) {
+  const status = document.querySelector('[data-share-status]');
+  if (status) status.textContent = message;
+}
+
+function buildLeaderboardShareText(standings) {
+  const lines = standings.slice(0, 3).map((row, idx) => (
+    `${idx + 1}. ${state.players[row.playerIdx]} - Played ${row.played}, Won ${row.wins}, Points ${row.points}`
+  ));
+  return [
+    'Americano top 3',
+    ...lines,
+  ].join('\n');
+}
+
+function shareLeaderboardToWhatsApp(standings) {
+  const text = buildLeaderboardShareText(standings);
+  updateLeaderboardShareStatus('Opening WhatsApp share...');
+  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
+}
+
+async function shareLeaderboardToInstagram(standings) {
+  updateLeaderboardShareStatus('Preparing Instagram image...');
+  try {
+    const blob = await buildLeaderboardShareImage(standings);
+    if (!blob) throw new Error('No share image available');
+    const file = new File([blob], 'americano-leaderboard.png', { type: 'image/png' });
+
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        title: 'Americano leaderboard',
+        files: [file],
+      });
+      updateLeaderboardShareStatus('Instagram-ready image shared.');
+      return;
+    }
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'americano-leaderboard.png';
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    updateLeaderboardShareStatus('Instagram-ready image downloaded.');
+  } catch (error) {
+    updateLeaderboardShareStatus('Unable to prepare Instagram share right now.');
+  }
+}
+
+async function buildLeaderboardShareImage(standings) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1080;
+  canvas.height = 1350;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+
+  const gradient = ctx.createLinearGradient(0, 0, 1080, 1350);
+  gradient.addColorStop(0, '#0e101b');
+  gradient.addColorStop(1, '#171a2d');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = 'rgba(217,255,51,0.08)';
+  ctx.beginPath();
+  ctx.arc(910, 170, 240, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#d9ff33';
+  ctx.font = '800 34px system-ui, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('UMP1RE', 96, 108);
+
+  ctx.fillStyle = '#f5f7ff';
+  ctx.font = '700 88px system-ui, sans-serif';
+  ctx.fillText('Americano', 96, 204);
+
+  ctx.fillStyle = 'rgba(245,247,255,0.72)';
+  ctx.font = '600 28px system-ui, sans-serif';
+  ctx.fillText(`Top 3 • ${state.players.length} players`, 96, 252);
+
+  ctx.fillStyle = 'rgba(255,255,255,0.05)';
+  roundRect(ctx, 72, 300, 936, 870, 30);
+  ctx.fill();
+
+  ctx.fillStyle = 'rgba(255,255,255,0.78)';
+  ctx.font = '700 24px system-ui, sans-serif';
+  const headers = ['Rank', 'Player', 'Played', 'Won', 'Points'];
+  const columns = [120, 200, 700, 820, 930];
+  headers.forEach((header, idx) => ctx.fillText(header, columns[idx], 366));
+
+  standings.slice(0, 3).forEach((row, idx) => {
+    const y = 430 + (idx * 58);
+    if (idx === 0) {
+      ctx.fillStyle = 'rgba(217,255,51,0.10)';
+      roundRect(ctx, 90, y - 34, 900, 46, 16);
+      ctx.fill();
+    }
+
+    ctx.fillStyle = idx === 0 ? '#d9ff33' : '#f5f7ff';
+    ctx.font = '700 28px system-ui, sans-serif';
+    ctx.fillText(String(idx + 1), columns[0], y);
+    ctx.fillText(String(row.played), columns[2], y);
+    ctx.fillText(String(row.wins), columns[3], y);
+    ctx.fillText(String(row.points), columns[4], y);
+
+    ctx.fillStyle = '#f5f7ff';
+    ctx.font = '600 28px system-ui, sans-serif';
+    drawCanvasText(ctx, state.players[row.playerIdx], columns[1], y, 440);
+  });
+
+  ctx.fillStyle = 'rgba(245,247,255,0.65)';
+  ctx.font = '500 24px system-ui, sans-serif';
+  ctx.fillText('Top 3 snapshot • Played • Won • Points', 96, 1230);
+
+  return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+}
+
+function roundRect(ctx, x, y, width, height, radius) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  ctx.lineTo(x + radius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+}
+
+function drawCanvasText(ctx, text, x, y, maxWidth) {
+  let content = String(text);
+  while (ctx.measureText(content).width > maxWidth && content.length > 1) {
+    content = `${content.slice(0, -2)}…`;
+  }
+  ctx.fillText(content, x, y);
 }
 
 function attachPageHandlers() {
@@ -745,6 +925,15 @@ function attachPageHandlers() {
       return;
     }
     render();
+  });
+
+  const prevRoundBtn = document.querySelector('[data-action="prev-round"]');
+  if (prevRoundBtn) prevRoundBtn.addEventListener('click', () => {
+    state.activeFixtureIndex = null;
+    if (state.currentRoundIndex > 0) {
+      state.currentRoundIndex -= 1;
+      render();
+    }
   });
 
   document.querySelectorAll('input[data-player-index]').forEach(input => {
@@ -832,16 +1021,6 @@ function attachPageHandlers() {
         const value = Number(btn.dataset.value);
         setDraftScore(fixtureIndex, side, value);
       });
-    });
-  });
-
-  document.querySelectorAll('[data-round-choice]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const nextIndex = Number(btn.dataset.roundChoice);
-      if (!Number.isInteger(nextIndex)) return;
-      state.currentRoundIndex = Math.max(0, Math.min(nextIndex, state.schedule.length - 1));
-      state.activeFixtureIndex = null;
-      render();
     });
   });
 
@@ -1007,7 +1186,20 @@ function buildAmericanoSchedule(numPlayers, rotations, courts = 1) {
     base = FIXED_6.map(rawToRound);
   } else {
     const totalRounds = numPlayers % 2 === 0 ? numPlayers - 1 : numPlayers;
-    base = Array.from({ length: totalRounds }, (_, i) => buildCircleRound(numPlayers, i, maxCourts));
+    let previousSitOut = [];
+    const playCounts = new Array(numPlayers).fill(0);
+    const schedule = [];
+    for (let i = 0; i < totalRounds * cycles; i += 1) {
+      const round = buildDynamicRound(numPlayers, i, maxCourts, previousSitOut, playCounts);
+      schedule.push(round);
+      for (const match of round.matches) {
+        for (const player of [...match.a, ...match.b]) {
+          playCounts[player] += 1;
+        }
+      }
+      previousSitOut = round.sitOut;
+    }
+    return schedule;
   }
 
   const schedule = [];
@@ -1035,15 +1227,20 @@ function estimateTournamentTime() {
   const totalMinutes = Math.max(1, Math.round(schedule.length * minutesPerRound));
   const roundedMinutesPerRound = Math.max(1, Math.round(minutesPerRound));
   const rounds = schedule.length;
-  const courtLabel = state.courts === 1 ? 'court' : 'courts';
+  const effectiveCourts = maxCourtsInSchedule(schedule);
+  const courtLabel = effectiveCourts === 1 ? 'court' : 'courts';
   const roundLabel = rounds === 1 ? 'round' : 'rounds';
 
   return {
     minutes: totalMinutes,
     perGameLabel: formatMinutes(roundedMinutesPerRound),
     totalLabel: formatMinutes(totalMinutes),
-    meta: `${formatMinutes(totalMinutes)} total, ${rounds} ${roundLabel} at ${state.pointsPerGame} points, ${state.courts} ${courtLabel}`,
+    meta: `${formatMinutes(totalMinutes)} total, ${rounds} ${roundLabel} at ${state.pointsPerGame} points, up to ${effectiveCourts} ${courtLabel}`,
   };
+}
+
+function maxCourtsInSchedule(schedule) {
+  return Math.max(1, ...schedule.map(round => round.matches?.length || 0));
 }
 
 function gameMinutesForPoints(points) {
@@ -1064,47 +1261,47 @@ function rawToRound(entry) {
   return { matches: [{ a: entry.a, b: entry.b }], sitOut: entry.sit };
 }
 
-function buildCircleRound(numPlayers, roundIdx, maxCourts) {
-  const hasGhost = numPlayers % 2 !== 0;
-  const totalPlayers = hasGhost ? numPlayers + 1 : numPlayers;
-  const ghost = hasGhost ? numPlayers : -1;
-  const rotation = roundIdx % (totalPlayers - 1);
+function buildDynamicRound(numPlayers, roundIdx, maxCourts, previousSitOut = [], playCounts = []) {
+  const courtCount = Math.min(Math.max(1, maxCourts || 1), Math.floor(numPlayers / 4), 3);
+  const activeCount = courtCount * 4;
+  const previous = new Set(previousSitOut);
+  const active = [];
+  const activeSet = new Set();
 
-  const pos = [0];
-  for (let i = 1; i < totalPlayers; i += 1) {
-    pos.push(((i - 1 + rotation) % (totalPlayers - 1)) + 1);
+  const candidates = Array.from({ length: numPlayers }, (_, player) => player)
+    .sort((a, b) => {
+      const previousDiff = Number(previous.has(b)) - Number(previous.has(a));
+      if (previousDiff) return previousDiff;
+      const playDiff = (playCounts[a] || 0) - (playCounts[b] || 0);
+      if (playDiff) return playDiff;
+      return rotateTie(a, roundIdx, numPlayers) - rotateTie(b, roundIdx, numPlayers);
+    });
+
+  for (const player of candidates) {
+    if (active.length >= activeCount) break;
+    active.push(player);
+    activeSet.add(player);
   }
 
-  const allPairs = [];
-  for (let i = 0; i < totalPlayers / 2; i += 1) {
-    allPairs.push([pos[i], pos[totalPlayers - 1 - i]]);
-  }
-
-  const sitOut = [];
-  const realPairs = [];
-  for (const [a, b] of allPairs) {
-    if (a === ghost || b === ghost) {
-      sitOut.push(a === ghost ? b : a);
-    } else {
-      realPairs.push([a, b]);
-    }
-  }
-
+  const ordered = active
+    .slice()
+    .sort((a, b) => rotateTie(a, roundIdx, numPlayers) - rotateTie(b, roundIdx, numPlayers));
   const matches = [];
-  const courtCount = Math.min(Math.max(1, maxCourts || 1), Math.floor(realPairs.length / 2), 3);
-  for (let i = 0; i < courtCount * 2; i += 2) {
-    matches.push({ a: realPairs[i], b: realPairs[i + 1] });
+  for (let i = 0; i < ordered.length; i += 4) {
+    const group = ordered.slice(i, i + 4);
+    matches.push({
+      a: [group[0], group[3]],
+      b: [group[1], group[2]],
+    });
   }
 
-  if (realPairs.length > matches.length * 2) {
-    for (let i = matches.length * 2; i < realPairs.length; i += 1) {
-      const [a, b] = realPairs[i];
-      sitOut.push(a, b);
-    }
-  }
-
-  sitOut.sort((a, b) => a - b);
+  const sitOut = Array.from({ length: numPlayers }, (_, player) => player)
+    .filter(player => !activeSet.has(player));
   return { matches, sitOut };
+}
+
+function rotateTie(player, roundIdx, numPlayers) {
+  return ((player - roundIdx) % numPlayers + numPlayers) % numPlayers;
 }
 
 function buildFixtureOrder(schedule) {
@@ -1164,7 +1361,12 @@ function calcAmericanoStandings(numPlayers, fixtures, scores) {
     points: pts[i],
     wins: wins[i],
     played: played[i],
-  })).sort((a, b) => b.points - a.points || b.wins - a.wins);
+  })).sort((a, b) => (
+    b.played - a.played ||
+    b.wins - a.wins ||
+    b.points - a.points ||
+    a.playerIdx - b.playerIdx
+  ));
 }
 
 function validateScore(scoreA, scoreB, target) {
@@ -1182,7 +1384,7 @@ function updateLayoutMode() {
       : state.pageIndex === 1 && !state.built
       ? 'setup'
       : (state.pageIndex >= 3 && state.built
-        ? (Number.isInteger(state.activeFixtureIndex) ? 'match' : 'overview')
+        ? (Number.isInteger(state.activeFixtureIndex) ? 'match' : 'round')
         : 'setup');
   document.body.classList.remove('require-landscape');
   document.body.dataset.pageMode = pageMode;
