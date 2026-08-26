@@ -536,9 +536,6 @@ function renderSetupNamesPage() {
               <div class="player-grid player-grid-two-col">
                 ${players}
               </div>
-              <div class="names-reset-row">
-                <button class="btn secondary" data-action="fill" type="button">Reset names</button>
-              </div>
             </div>
           </div>
           <div class="screen-actions names-actions">
@@ -701,6 +698,7 @@ function renderLeaderboard() {
   const standings = calcAmericanoStandings(state.numPlayers, state.fixtures, state.scores);
   const completed = countSavedFixtures();
   const missed = getMissedFixtures();
+  const fairnessAdjusted = standings.some(row => row.bonus > 0);
 
   const missedHtml = missed.length
     ? `
@@ -719,7 +717,7 @@ function renderLeaderboard() {
     `
     : '';
 
-  els['leaderboard-subtitle'].textContent = `${completed} / ${state.fixtures.length} matches saved`;
+  els['leaderboard-subtitle'].textContent = `${completed} / ${state.fixtures.length} matches saved${fairnessAdjusted ? ' · uneven games adjusted with an average-score bonus' : ''}`;
   els['leaderboard-body'].innerHTML = `
     ${missedHtml}
     <div class="table-wrap">
@@ -993,9 +991,6 @@ function attachPageHandlers() {
     });
   });
 
-  const fillBtn = document.querySelector('[data-action="fill"]');
-  if (fillBtn) fillBtn.addEventListener('click', resetNames);
-
   const saveBtn = document.querySelector('[data-action="save"]');
   if (saveBtn) saveBtn.addEventListener('click', saveRound);
 
@@ -1137,11 +1132,6 @@ function buildTournament() {
   state.activeFixtureIndex = null;
   state.setupStep = 0;
   state.pageIndex = 3;
-  render();
-}
-
-function resetNames() {
-  state.players = Array.from({ length: state.numPlayers }, (_, i) => `Player ${i + 1}`);
   render();
 }
 
@@ -1473,15 +1463,22 @@ function calcAmericanoStandings(numPlayers, fixtures, scores) {
     }
   }
 
+  const totalPoints = pts.reduce((sum, value) => sum + value, 0);
+  const totalPlayed = played.reduce((sum, value) => sum + value, 0);
+  const averageScore = totalPlayed > 0 ? Math.round(totalPoints / totalPlayed) : 0;
+  const maxPlayed = Math.max(...played, 0);
+
   return Array.from({ length: numPlayers }, (_, i) => ({
     playerIdx: i,
-    points: pts[i],
+    points: pts[i] + (played[i] > 0 && played[i] < maxPlayed ? averageScore : 0),
+    bonus: played[i] > 0 && played[i] < maxPlayed ? averageScore : 0,
+    rawPoints: pts[i],
     wins: wins[i],
     played: played[i],
   })).sort((a, b) => (
-    b.played - a.played ||
-    b.wins - a.wins ||
     b.points - a.points ||
+    b.wins - a.wins ||
+    b.played - a.played ||
     a.playerIdx - b.playerIdx
   ));
 }
