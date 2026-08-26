@@ -32,11 +32,25 @@ const FIXED_6 = [
   { a: [0, 1], b: [4, 5], sit: [2, 3] },
 ];
 
+const DEFAULT_CONFIG = {
+  playerOptions: [4, 5, 6, 8, 10, 12],
+  courtOptions: [1, 2, 3],
+  pointOptions: [16, 21, 24],
+  rotationOptions: [1, 2, 3],
+  minutesPerGame: {
+    16: 10,
+    21: 13,
+    24: 15,
+  },
+};
+
+let config = normalizeConfig(DEFAULT_CONFIG);
+
 const state = {
-  numPlayers: 4,
-  courts: 1,
-  pointsPerGame: 16,
-  rotations: 1,
+  numPlayers: DEFAULT_CONFIG.playerOptions[0],
+  courts: DEFAULT_CONFIG.courtOptions[0],
+  pointsPerGame: DEFAULT_CONFIG.pointOptions[0],
+  rotations: DEFAULT_CONFIG.rotationOptions[0],
   players: [],
   schedule: [],
   fixtures: [],
@@ -53,7 +67,8 @@ const state = {
 
 const els = {};
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  config = await loadAmericanoConfig();
   cacheElements();
   initDefaults();
   bindEvents();
@@ -78,7 +93,59 @@ function cacheElements() {
   });
 }
 
+async function loadAmericanoConfig() {
+  try {
+    const response = await fetch('/americano/config.json', { cache: 'no-store' });
+    if (response.ok) {
+      return normalizeConfig(await response.json());
+    }
+  } catch (_) {
+  }
+  return normalizeConfig(DEFAULT_CONFIG);
+}
+
+function normalizeConfig(raw) {
+  const next = {
+    playerOptions: normalizeNumberList(raw?.playerOptions, DEFAULT_CONFIG.playerOptions, 4, 32),
+    courtOptions: normalizeNumberList(raw?.courtOptions, DEFAULT_CONFIG.courtOptions, 1, 8),
+    pointOptions: normalizeNumberList(raw?.pointOptions, DEFAULT_CONFIG.pointOptions, 1, 99),
+    rotationOptions: normalizeNumberList(raw?.rotationOptions, DEFAULT_CONFIG.rotationOptions, 1, 12),
+    minutesPerGame: {},
+  };
+
+  for (const points of next.pointOptions) {
+    const configured = Number(raw?.minutesPerGame?.[points]);
+    const defaultMinutes = DEFAULT_CONFIG.minutesPerGame[points] ?? Math.round(10 * (points / 16));
+    next.minutesPerGame[points] = Number.isFinite(configured) && configured > 0
+      ? configured
+      : defaultMinutes;
+  }
+
+  return next;
+}
+
+function normalizeNumberList(value, fallback, min, max) {
+  const source = Array.isArray(value) ? value : fallback;
+  const numbers = source
+    .map(item => Number(item))
+    .filter(item => Number.isInteger(item) && item >= min && item <= max);
+  const unique = Array.from(new Set(numbers)).sort((a, b) => a - b);
+  return unique.length ? unique : fallback;
+}
+
+function applyConfigDefaults() {
+  state.numPlayers = pickConfiguredValue(state.numPlayers, config.playerOptions);
+  state.courts = pickConfiguredValue(state.courts, config.courtOptions);
+  state.pointsPerGame = pickConfiguredValue(state.pointsPerGame, config.pointOptions);
+  state.rotations = pickConfiguredValue(state.rotations, config.rotationOptions);
+}
+
+function pickConfiguredValue(value, options) {
+  return options.includes(value) ? value : options[0];
+}
+
 function initDefaults() {
+  applyConfigDefaults();
   state.players = Array.from({ length: state.numPlayers }, (_, i) => `Player ${i + 1}`);
 }
 
@@ -195,10 +262,10 @@ function confirmSkipRound() {
 }
 
 function resetTournament() {
-  state.numPlayers = 4;
-  state.courts = 1;
-  state.pointsPerGame = 16;
-  state.rotations = 1;
+  state.numPlayers = config.playerOptions[0];
+  state.courts = config.courtOptions[0];
+  state.pointsPerGame = config.pointOptions[0];
+  state.rotations = config.rotationOptions[0];
   state.players = Array.from({ length: state.numPlayers }, (_, i) => `Player ${i + 1}`);
   state.schedule = [];
   state.fixtures = [];
@@ -302,7 +369,7 @@ function getSetupSteps() {
       html: `
         <div class="choice-group">
           <div class="choice-grid">
-            ${[4, 5, 6, 8, 10, 12].map(value => `
+            ${config.playerOptions.map(value => `
               <button class="choice-card ${state.numPlayers === value ? 'active' : ''}" type="button" data-player-choice="${value}">
                 <span class="choice-value">${value}</span>
                 <span class="choice-sub">players</span>
@@ -319,7 +386,7 @@ function getSetupSteps() {
       html: `
         <div class="choice-group">
           <div class="choice-grid">
-            ${[1, 2, 3].map(value => `
+            ${config.courtOptions.map(value => `
               <button class="choice-card ${state.courts === value ? 'active' : ''}" type="button" data-courts-choice="${value}">
                 <span class="choice-value">${value}</span>
                 <span class="choice-sub">${value === 1 ? 'court' : 'courts'}</span>
@@ -337,7 +404,7 @@ function getSetupSteps() {
         <div class="points-step">
           <div class="choice-group">
             <div class="choice-grid">
-              ${[16, 21, 24].map(value => `
+              ${config.pointOptions.map(value => `
                 <button class="choice-card ${state.pointsPerGame === value ? 'active' : ''}" type="button" data-points-choice="${value}">
                   <span class="choice-value">${value}</span>
                   <span class="choice-sub">points</span>
@@ -360,7 +427,7 @@ function getSetupSteps() {
         <div class="rotations-step">
           <div class="choice-group">
             <div class="choice-grid">
-              ${[1, 2, 3].map(value => `
+              ${config.rotationOptions.map(value => `
                 <button class="choice-card ${state.rotations === value ? 'active' : ''}" type="button" data-rotations-choice="${value}">
                   <span class="choice-value">${value}</span>
                   <span class="choice-sub">${roundsPerRotation * value} rounds</span>
@@ -406,18 +473,10 @@ function renderSetupNamesPage() {
               ${players}
             </div>
           </div>
-          <div class="card-body">
-            <div class="page-footer score-footer">
-              <div class="screen-back">
-                <button class="btn ghost" data-action="back">Back</button>
-              </div>
-              <div class="score-footer-mid">
-                <button class="btn secondary" data-action="fill" type="button">Reset names</button>
-              </div>
-              <div class="page-actions">
-                <button class="btn primary" data-action="build">Start tournament</button>
-              </div>
-            </div>
+          <div class="names-actions">
+            <button class="btn ghost" data-action="back">Back</button>
+            <button class="btn secondary" data-action="fill" type="button">Reset names</button>
+            <button class="btn primary" data-action="build">Start tournament</button>
           </div>
         </div>
       </div>
@@ -430,7 +489,6 @@ function renderScorePage(fixtureIndex) {
   if (!fixture) return renderIntroPage();
   const draft = getDraft(fixtureIndex);
   const cols = scoreCols(state.pointsPerGame);
-  const sit = fixture.round.sitOut.length ? fixture.round.sitOut.map(i => state.players[i]).join(', ') : 'None';
   const teamA = teamLabel(fixture.match.a, ' & ');
   const teamB = teamLabel(fixture.match.b, ' & ');
   const roundLabel = fixtureLabel(fixture);
@@ -446,7 +504,7 @@ function renderScorePage(fixtureIndex) {
         </div>
       </div>
       <div class="content round-grid">
-        <div class="card">
+        <div class="card score-card">
           <div class="card-body">
             <div class="score-strip" aria-label="Current score">
               <span class="score-strip-value a">${scoreA}</span>
@@ -467,22 +525,10 @@ function renderScorePage(fixtureIndex) {
                 <div class="score-grid" style="--score-cols:${cols};" data-score-grid="b"></div>
               </div>
             </div>
-            <div class="round-summary">
-              <div class="round-summary-item">
-                <span class="label">Sit out</span>
-                <strong>${escapeHtml(sit)}</strong>
-              </div>
-            </div>
-            <div class="page-footer score-footer">
-              <div class="screen-back">
-                <button class="btn secondary" data-action="back">Back</button>
-              </div>
-              <div class="score-footer-mid">
-                <button class="btn secondary" data-action="leaderboard" type="button">Leaderboard</button>
-              </div>
-              <div class="page-actions">
-                <button class="btn primary" data-action="save">Next round</button>
-              </div>
+            <div class="round-actions score-actions">
+              <button class="btn ghost" data-action="back">Back</button>
+              <button class="btn secondary" data-action="leaderboard" type="button">Leaderboard</button>
+              <button class="btn primary" data-action="save">Next round</button>
             </div>
           </div>
         </div>
@@ -498,7 +544,7 @@ function renderRoundOverviewPage(roundIndex = 0) {
   const round = state.schedule[safeRoundIndex];
   const roundLabel = `Round ${safeRoundIndex + 1}/${state.schedule.length}`;
   const roundFixtures = state.fixtures.filter((fixture) => fixture.roundIndex === safeRoundIndex);
-  const completedCount = roundFixtures.filter((fixture) => state.scores[fixture.fixtureIndex]).length;
+  const sit = round.sitOut.length ? round.sitOut.map(i => state.players[i]).join(', ') : 'None';
 
   const roundTabs = state.schedule.map((entry, idx) => {
     const fixtures = state.fixtures.filter((fixture) => fixture.roundIndex === idx);
@@ -515,18 +561,13 @@ function renderRoundOverviewPage(roundIndex = 0) {
     const saved = state.scores[fixture.fixtureIndex];
     const teamA = teamLabel(fixture.match.a, ' & ');
     const teamB = teamLabel(fixture.match.b, ' & ');
-    const sit = fixture.round.sitOut.length ? fixture.round.sitOut.map(i => state.players[i]).join(', ') : 'None';
     return `
       <button class="schedule-item fixture-card ${saved ? 'completed' : ''}" type="button" data-open-fixture="${fixture.fixtureIndex}">
-        <div class="head">
-          <div>
-            <div class="round">${escapeHtml(fixtureLabel(fixture))}</div>
-            <div class="meta">${saved ? `Saved ${saved.scoreA} - ${saved.scoreB}` : 'Tap to score this match'}</div>
-          </div>
-          <div class="fixture-badge">${saved ? 'Done' : 'Open'}</div>
-        </div>
-        <div class="match">${escapeHtml(teamA)} vs ${escapeHtml(teamB)}</div>
-        <div class="sit">Sit out: ${escapeHtml(sit)}</div>
+        <div class="fixture-card-court">Court ${fixture.courtIndex + 1}</div>
+        <div class="fixture-card-team">${escapeHtml(teamA)}</div>
+        <div class="fixture-card-vs">vs</div>
+        <div class="fixture-card-team">${escapeHtml(teamB)}</div>
+        <div class="fixture-card-status">${saved ? `Saved ${saved.scoreA} - ${saved.scoreB}` : 'Open scoring'}</div>
       </button>
     `;
   }).join('');
@@ -536,37 +577,25 @@ function renderRoundOverviewPage(roundIndex = 0) {
       <div class="screen-head">
         <div>
           <h2>${escapeHtml(roundLabel)}</h2>
-          <p>${roundFixtures.length} match${roundFixtures.length === 1 ? '' : 'es'} on this round. Tap any pairing to open its score page.</p>
+          <p>Tap a court to open scoring.</p>
         </div>
       </div>
       <div class="content leaderboard-page">
         <div class="round-nav">
           ${roundTabs}
         </div>
+        <div class="round-sitout">
+          <span>Sitting out</span>
+          <strong>${escapeHtml(sit)}</strong>
+        </div>
         <div class="schedule-list">
           ${fixtureCards}
         </div>
-        <div class="round-summary">
-          <div class="round-summary-item">
-            <span class="label">Completed this round</span>
-            <strong>${completedCount} / ${roundFixtures.length}</strong>
-          </div>
-          <div class="round-summary-item">
-            <span class="label">Courts in play</span>
-            <strong>${round.matches.length}</strong>
-          </div>
-        </div>
       </div>
-      <div class="page-footer score-footer">
-        <div class="screen-back">
-          <button class="btn secondary" data-action="back">Back</button>
-        </div>
-        <div class="score-footer-mid">
-          <button class="btn secondary" data-action="leaderboard" type="button">Leaderboard</button>
-        </div>
-        <div class="page-actions">
-          <button class="btn primary" data-action="next-round">Next round</button>
-        </div>
+      <div class="round-actions">
+        <button class="btn ghost" data-action="back">Back</button>
+        <button class="btn secondary" data-action="leaderboard" type="button">Leaderboard</button>
+        <button class="btn primary" data-action="next-round">Next round</button>
       </div>
     </section>
   `;
@@ -924,6 +953,10 @@ function scoreButtonsHtml(side, draft) {
 function updateTopbarCopy() {
   if (!els['topbar-copy']) return;
   if (!state.built) {
+    if (state.pageIndex === 2) {
+      els['topbar-copy'].textContent = 'Names';
+      return;
+    }
     const step = getSetupSteps()[state.setupStep];
     els['topbar-copy'].textContent = step
       ? step.title
@@ -963,7 +996,7 @@ function getMissedFixtures() {
 
 function buildAmericanoSchedule(numPlayers, rotations, courts = 1) {
   const cycles = Math.max(1, Number(rotations) || 1);
-  const maxCourts = Math.max(1, Math.min(3, Number(courts) || 1));
+  const maxCourts = Math.max(1, Number(courts) || 1);
   let base;
 
   if (numPlayers <= 4) {
@@ -998,7 +1031,7 @@ function roundsPerRotationFor(numPlayers, courts) {
 
 function estimateTournamentTime() {
   const schedule = buildAmericanoSchedule(state.numPlayers, state.rotations, state.courts);
-  const minutesPerRound = 10 * (state.pointsPerGame / 16);
+  const minutesPerRound = gameMinutesForPoints(state.pointsPerGame);
   const totalMinutes = Math.max(1, Math.round(schedule.length * minutesPerRound));
   const roundedMinutesPerRound = Math.max(1, Math.round(minutesPerRound));
   const rounds = schedule.length;
@@ -1011,6 +1044,12 @@ function estimateTournamentTime() {
     totalLabel: formatMinutes(totalMinutes),
     meta: `${formatMinutes(totalMinutes)} total, ${rounds} ${roundLabel} at ${state.pointsPerGame} points, ${state.courts} ${courtLabel}`,
   };
+}
+
+function gameMinutesForPoints(points) {
+  const configured = Number(config.minutesPerGame[points]);
+  if (Number.isFinite(configured) && configured > 0) return configured;
+  return 10 * (points / 16);
 }
 
 function formatMinutes(minutes) {

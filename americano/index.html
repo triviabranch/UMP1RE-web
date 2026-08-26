@@ -322,12 +322,7 @@
 
   .landing-card {
     width: min(760px, 100%);
-    padding: 0.7rem 0.8rem 0.85rem;
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    background: rgba(7, 7, 13, 0.74);
-    backdrop-filter: blur(18px);
-    box-shadow: var(--shadow);
+    padding: 0;
     text-align: center;
   }
 
@@ -728,17 +723,22 @@
     gap: 0;
     height: 100%;
     min-height: 0;
-    width: min(920px, 100%);
+    width: min(760px, 100%);
     justify-self: center;
+    border-radius: 18px;
+    background: rgba(7, 7, 13, 0.78);
+    backdrop-filter: blur(18px);
+    box-shadow: var(--shadow);
   }
 
   body[data-page-mode="names"] .names-panel .card-head {
-    padding: 0.55rem 0.65rem;
+    padding: 0.9rem 0.95rem 0.75rem;
+    justify-content: center;
+    text-align: center;
   }
 
   body[data-page-mode="names"] .names-panel .card-body {
-    padding-left: 0.65rem;
-    padding-right: 0.65rem;
+    padding: 0.95rem;
   }
 
   body[data-page-mode="names"] .names-body {
@@ -750,6 +750,19 @@
     display: flex;
     justify-content: flex-end;
     margin-top: 0.55rem;
+  }
+
+  .names-actions {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: space-between;
+    gap: 0.65rem;
+    padding: 0.8rem 0.95rem 0.95rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .names-actions .btn {
+    min-width: 7.5rem;
   }
 
   body[data-page-mode="names"] .names-panel .card-head .meta {
@@ -1074,39 +1087,6 @@
     gap: 0.55rem;
   }
 
-  .round-summary {
-    display: grid;
-    gap: 0.45rem;
-    margin-bottom: 0.65rem;
-    padding: 0.65rem;
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    background: rgba(255,255,255,0.02);
-  }
-
-  .round-summary-item {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 0.75rem;
-  }
-
-  .round-summary-item .label {
-    font-size: 0.62rem;
-    font-weight: 800;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-    color: var(--dim);
-    white-space: nowrap;
-  }
-
-  .round-summary-item strong {
-    color: var(--text);
-    font-size: 0.85rem;
-    line-height: 1.35;
-    text-align: right;
-  }
-
   .team-box {
     border: 1px solid var(--line);
     border-radius: 16px;
@@ -1353,15 +1333,19 @@
 
   .schedule-list {
     display: grid;
-    gap: 0.55rem;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: 0.65rem;
     min-height: 0;
   }
 
   .round-nav {
-    display: flex;
-    gap: 0.45rem;
-    flex-wrap: wrap;
-    align-items: center;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    gap: 0.35rem;
+    overflow-x: auto;
+    padding-bottom: 0.15rem;
+    -webkit-overflow-scrolling: touch;
   }
 
   .round-tab {
@@ -1369,15 +1353,16 @@
     border-radius: 999px;
     background: rgba(255,255,255,0.03);
     color: var(--muted);
-    padding: 0.45rem 0.75rem;
+    padding: 0.42rem 0.62rem;
     display: inline-flex;
     align-items: center;
-    gap: 0.45rem;
+    gap: 0.34rem;
     cursor: pointer;
-    font-size: 0.66rem;
+    font-size: 0.62rem;
     font-weight: 800;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
+    white-space: nowrap;
   }
 
   .round-tab.active {
@@ -1387,9 +1372,34 @@
   }
 
   .round-tab-count {
-    font-size: 0.62rem;
-    letter-spacing: 0.1em;
+    font-size: 0.58rem;
+    letter-spacing: 0.04em;
     opacity: 0.85;
+  }
+
+  .round-sitout {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.68rem 0.8rem;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: rgba(255,255,255,0.02);
+  }
+
+  .round-sitout span {
+    color: var(--dim);
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .round-sitout strong {
+    color: var(--text);
+    font-size: 0.9rem;
+    text-align: right;
   }
 
   .schedule-item {
@@ -1401,7 +1411,11 @@
 
   .fixture-card {
     width: 100%;
-    text-align: left;
+    min-height: 10.5rem;
+    display: grid;
+    gap: 0.35rem;
+    align-content: center;
+    text-align: center;
     cursor: pointer;
     transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
   }
@@ -1417,55 +1431,61 @@
     background: rgba(217,255,51,0.04);
   }
 
-  .fixture-badge {
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 0.28rem 0.55rem;
-    font-size: 0.6rem;
-    font-weight: 800;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--dim);
-    white-space: nowrap;
-  }
-
-  .fixture-card.completed .fixture-badge {
-    border-color: transparent;
-    background: var(--lime);
-    color: #24262e;
-  }
-
-  .schedule-item .head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    margin-bottom: 0.55rem;
-  }
-
-  .schedule-item .head .round {
+  .fixture-card-court {
+    color: var(--lime);
     font-size: 0.68rem;
+    font-weight: 800;
     letter-spacing: 0.16em;
     text-transform: uppercase;
-    font-weight: 800;
-    color: var(--lime);
   }
 
-  .schedule-item .head .meta {
-    color: var(--dim);
-    font-size: 0.82rem;
-  }
-
-  .schedule-item .match {
+  .fixture-card-team {
+    font-family: var(--display);
     color: var(--text);
-    font-size: 0.92rem;
-    line-height: 1.5;
+    font-size: 1.8rem;
+    line-height: 0.95;
+    letter-spacing: 0.05em;
   }
 
-  .schedule-item .sit {
-    margin-top: 0.45rem;
+  .fixture-card-vs {
     color: var(--dim);
-    font-size: 0.82rem;
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+
+  .fixture-card-status {
+    margin-top: 0.15rem;
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .round-actions {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: space-between;
+    gap: 0.65rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .round-actions .btn {
+    min-width: 7.5rem;
+  }
+
+  .score-card {
+    background: rgba(7, 7, 13, 0.78);
+    backdrop-filter: blur(18px);
+    box-shadow: var(--shadow);
+  }
+
+  .score-actions {
+    margin-top: auto;
+    padding: 0.8rem 0 0;
   }
 
   .table-wrap {
@@ -1847,11 +1867,6 @@
       font-size: 0.84rem;
     }
 
-    .round-summary {
-      gap: 0.3rem;
-      padding: 0.55rem;
-      margin-bottom: 0.5rem;
-    }
   }
 
   @media (max-height: 500px) and (orientation: landscape) {
@@ -1979,11 +1994,6 @@
       min-height: 2.5rem;
       font-size: 0.76rem;
     }
-    .round-summary {
-      gap: 0.3rem;
-      padding: 0.5rem;
-      margin-bottom: 0.45rem;
-    }
     .player-grid {
       gap: 0.35rem;
     }
@@ -2052,17 +2062,12 @@
       gap: 0.45rem;
     }
 
-    .card,
-    .landing-card {
+    .card {
       border-radius: 16px;
     }
 
     .landing {
       gap: 0.7rem;
-    }
-
-    .landing-card {
-      padding: 0.62rem 0.68rem 0.72rem;
     }
 
     .landing-logo {
@@ -2123,11 +2128,13 @@
       font-size: 1.55rem;
     }
 
-    .setup-modal-actions {
+    .setup-modal-actions,
+    .names-actions {
       padding: 0.65rem 0.72rem 0.72rem;
     }
 
-    .setup-modal-actions .btn {
+    .setup-modal-actions .btn,
+    .names-actions .btn {
       min-width: 0;
       flex: 1;
     }
@@ -2219,22 +2226,34 @@
       font-size: clamp(1.6rem, 6.8vw, 2.45rem);
     }
 
-    .round-summary {
-      gap: 0.3rem;
-      padding: 0.52rem;
-      margin-bottom: 0.45rem;
-    }
-
     .page-actions {
       gap: 0.35rem;
     }
 
     .page-actions .btn,
     .screen-back .btn,
-    .score-footer-mid .btn {
+    .score-footer-mid .btn,
+    .round-actions .btn {
       min-height: 32px;
       padding: 0.46rem 0.72rem;
       font-size: 0.6rem;
+    }
+
+    .round-actions {
+      padding-top: 0.65rem;
+    }
+
+    .round-actions .btn {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .fixture-card {
+      min-height: 9.25rem;
+    }
+
+    .fixture-card-team {
+      font-size: 1.55rem;
     }
 
     .modal {
@@ -2311,17 +2330,12 @@
       gap: 0.32rem;
     }
 
-    .card,
-    .landing-card {
+    .card {
       border-radius: 14px;
     }
 
     .landing {
       gap: 0.5rem;
-    }
-
-    .landing-card {
-      padding: 0.5rem 0.55rem 0.62rem;
     }
 
     .landing-logo {
@@ -2390,9 +2404,23 @@
       font-size: 0.64rem;
     }
 
-    .setup-modal-actions {
+    .setup-modal-actions,
+    .names-actions {
       padding: 0.52rem 0.55rem 0.55rem;
       gap: 0.4rem;
+    }
+
+    .names-actions {
+      flex-wrap: wrap;
+    }
+
+    .names-actions .btn {
+      min-width: 0;
+      flex: 1 1 calc(50% - 0.2rem);
+    }
+
+    .names-actions .btn.primary {
+      flex-basis: 100%;
     }
 
     .choice-grid {
@@ -2542,20 +2570,6 @@
       font-size: 0.74rem;
     }
 
-    .round-summary {
-      padding: 0.42rem;
-      margin-bottom: 0.32rem;
-      gap: 0.22rem;
-    }
-
-    .round-summary-item .label {
-      font-size: 0.55rem;
-    }
-
-    .round-summary-item strong {
-      font-size: 0.72rem;
-    }
-
     .page-footer,
     .nextup-footer {
       gap: 0.25rem;
@@ -2563,10 +2577,51 @@
 
     .page-actions .btn,
     .screen-back .btn,
-    .score-footer-mid .btn {
+    .score-footer-mid .btn,
+    .round-actions .btn {
       min-height: 30px;
       padding: 0.4rem 0.62rem;
       font-size: 0.56rem;
+    }
+
+    .round-actions {
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      padding-top: 0.52rem;
+    }
+
+    .round-actions .btn {
+      min-width: 0;
+      flex: 1 1 calc(50% - 0.2rem);
+      justify-content: center;
+    }
+
+    .round-actions .btn.primary {
+      flex-basis: 100%;
+    }
+
+    .schedule-list {
+      grid-template-columns: 1fr;
+      gap: 0.45rem;
+    }
+
+    .round-sitout {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .round-sitout strong {
+      text-align: left;
+    }
+
+    .fixture-card {
+      min-height: 8.5rem;
+      border-radius: 14px;
+    }
+
+    .fixture-card-team {
+      font-size: 1.35rem;
     }
 
     .modal {
