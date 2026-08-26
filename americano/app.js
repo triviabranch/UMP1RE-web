@@ -47,6 +47,7 @@ const state = {
   activeFixtureIndex: null,
   returnPageIndex: 0,
   pendingSkipRoundIndex: null,
+  setupStep: 0,
   built: false,
 };
 
@@ -207,6 +208,7 @@ function resetTournament() {
   state.currentRoundIndex = 0;
   state.activeFixtureIndex = null;
   state.pendingSkipRoundIndex = null;
+  state.setupStep = 0;
   state.built = false;
   render();
 }
@@ -227,7 +229,7 @@ function render() {
 
 function renderPage() {
   if (state.pageIndex === 0) return renderIntroPage();
-  if (state.pageIndex === 1) return renderSetupSettingsPage();
+  if (state.pageIndex === 1) return renderSetupWizardPage();
   if (state.pageIndex === 2) return renderSetupNamesPage();
   if (!state.built) return renderIntroPage();
   if (state.activeFixtureIndex !== null && state.activeFixtureIndex !== undefined) {
@@ -252,81 +254,129 @@ function renderIntroPage() {
   `;
 }
 
-function renderSetupSettingsPage() {
-  const roundsPerRotation = roundsPerRotationFor(state.numPlayers, state.courts);
+function renderSetupWizardPage() {
+  const steps = getSetupSteps();
+  const step = steps[state.setupStep] || steps[0];
+  const isLastStep = state.setupStep >= steps.length - 1;
+  const stepDots = steps.map((entry, idx) => `
+    <button class="setup-step-dot ${idx === state.setupStep ? 'active' : ''}" type="button" data-setup-step="${idx}" aria-label="Go to ${escapeHtml(entry.title)}">
+      <span>${idx + 1}</span>
+    </button>
+  `).join('');
+
   return `
     <section class="screen active">
-      <div class="screen-head">
-        <div>
-          <h2>Setup</h2>
-          <p>Choose the number of players, courts and points on offer for each game.</p>
-        </div>
-      </div>
-      <div class="content setup-flow">
-        <div class="card setup-panel">
-          <div class="card-body">
-            <div class="choice-group">
-              <div class="choice-label">Players</div>
-              <div class="choice-grid">
-                ${[4, 5, 6, 8, 10, 12].map(value => `
-                  <button class="choice-card ${state.numPlayers === value ? 'active' : ''}" type="button" data-player-choice="${value}">
-                    <span class="choice-value">${value}</span>
-                    <span class="choice-sub">players</span>
-                  </button>
-                `).join('')}
-              </div>
-            </div>
-            <div class="choice-group">
-              <div class="choice-label">Courts</div>
-              <div class="choice-grid">
-                ${[1, 2, 3].map(value => `
-                  <button class="choice-card ${state.courts === value ? 'active' : ''}" type="button" data-courts-choice="${value}">
-                    <span class="choice-value">${value}</span>
-                    <span class="choice-sub">${value === 1 ? 'court' : 'courts'}</span>
-                  </button>
-                `).join('')}
-              </div>
-            </div>
-            <div class="choice-group">
-              <div class="choice-label">Points per game</div>
-              <div class="choice-grid">
-                ${[16, 21, 24].map(value => `
-                  <button class="choice-card ${state.pointsPerGame === value ? 'active' : ''}" type="button" data-points-choice="${value}">
-                    <span class="choice-value">${value}</span>
-                    <span class="choice-sub">points</span>
-                  </button>
-                `).join('')}
-              </div>
-            </div>
-            <div class="choice-group">
-              <div class="choice-label">Rotations</div>
-              <div class="choice-grid">
-                ${[1, 2, 3].map(value => `
-                  <button class="choice-card ${state.rotations === value ? 'active' : ''}" type="button" data-rotations-choice="${value}">
-                    <span class="choice-value">${value}</span>
-                    <span class="choice-sub">${roundsPerRotation * value} games</span>
-                  </button>
-                `).join('')}
-              </div>
+      <div class="setup-modal-shell">
+        <div class="setup-modal-card">
+          <div class="setup-modal-head">
+            <div class="setup-kicker">Setup</div>
+            <h2>${escapeHtml(step.title)}</h2>
+            <p>${escapeHtml(step.copy)}</p>
+            <div class="setup-stepper" aria-label="Setup progress">
+              ${stepDots}
             </div>
           </div>
-          <div class="card-body">
-            <div class="page-footer score-footer">
-              <div class="screen-back">
-                <button class="btn ghost" data-action="back">Back</button>
-              </div>
-              <div class="score-footer-mid" aria-hidden="true"></div>
-              <div class="page-actions">
-                <div class="group">
-                  <button class="btn primary" data-action="setup-next">Next: names</button>
-                </div>
-              </div>
-            </div>
+          <div class="setup-modal-body">
+            ${step.html}
+          </div>
+          <div class="setup-modal-actions">
+            <button class="btn ghost" data-action="back">Back</button>
+            <button class="btn ${isLastStep ? 'primary' : 'secondary'}" data-action="setup-next">
+              ${isLastStep ? 'Next: names' : 'Next'}
+            </button>
           </div>
         </div>
       </div>
     </section>
   `;
+}
+
+function getSetupSteps() {
+  const roundsPerRotation = roundsPerRotationFor(state.numPlayers, state.courts);
+  const estimate = estimateTournamentTime();
+  return [
+    {
+      key: 'players',
+      title: 'Players',
+      copy: 'Choose how many players are joining this Americano.',
+      html: `
+        <div class="choice-group">
+          <div class="choice-grid">
+            ${[4, 5, 6, 8, 10, 12].map(value => `
+              <button class="choice-card ${state.numPlayers === value ? 'active' : ''}" type="button" data-player-choice="${value}">
+                <span class="choice-value">${value}</span>
+                <span class="choice-sub">players</span>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      `,
+    },
+    {
+      key: 'courts',
+      title: 'Courts',
+      copy: 'Select how many courts can run at the same time.',
+      html: `
+        <div class="choice-group">
+          <div class="choice-grid">
+            ${[1, 2, 3].map(value => `
+              <button class="choice-card ${state.courts === value ? 'active' : ''}" type="button" data-courts-choice="${value}">
+                <span class="choice-value">${value}</span>
+                <span class="choice-sub">${value === 1 ? 'court' : 'courts'}</span>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      `,
+    },
+    {
+      key: 'points',
+      title: 'Points',
+      copy: 'Set the fixed total points available in each match.',
+      html: `
+        <div class="points-step">
+          <div class="choice-group">
+            <div class="choice-grid">
+              ${[16, 21, 24].map(value => `
+                <button class="choice-card ${state.pointsPerGame === value ? 'active' : ''}" type="button" data-points-choice="${value}">
+                  <span class="choice-value">${value}</span>
+                  <span class="choice-sub">points</span>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+          <div class="per-game-estimate">
+            <span>Estimated time per game:</span>
+            <strong>${escapeHtml(estimate.perGameLabel)}</strong>
+          </div>
+        </div>
+      `,
+    },
+    {
+      key: 'rotations',
+      title: 'Rotations',
+      copy: 'Choose how many times to cycle through the generated fixtures.',
+      html: `
+        <div class="rotations-step">
+          <div class="choice-group">
+            <div class="choice-grid">
+              ${[1, 2, 3].map(value => `
+                <button class="choice-card ${state.rotations === value ? 'active' : ''}" type="button" data-rotations-choice="${value}">
+                  <span class="choice-value">${value}</span>
+                  <span class="choice-sub">${roundsPerRotation * value} rounds</span>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+          <div class="overall-estimate">
+            <span>Estimated overall Americano time:</span>
+            <strong>${escapeHtml(estimate.totalLabel)}</strong>
+            <em>${escapeHtml(estimate.meta)}</em>
+          </div>
+        </div>
+      `,
+    },
+  ];
 }
 
 function renderSetupNamesPage() {
@@ -341,8 +391,8 @@ function renderSetupNamesPage() {
     <section class="screen active">
       <div class="screen-head">
         <div>
-          <h2>Players</h2>
-          <p>Enter the names, then start the tournament.</p>
+          <h2>Names</h2>
+          <p>Name the players before the first round starts.</p>
         </div>
       </div>
       <div class="content names-flow">
@@ -351,12 +401,9 @@ function renderSetupNamesPage() {
             <div class="title">Player names</div>
             <div class="meta">Edit all ${state.numPlayers}</div>
           </div>
-          <div class="card-body">
+          <div class="card-body names-body">
             <div class="player-grid">
               ${players}
-            </div>
-            <div class="names-reset-row">
-              <button class="btn secondary" data-action="fill" type="button">Reset names</button>
             </div>
           </div>
           <div class="card-body">
@@ -364,11 +411,11 @@ function renderSetupNamesPage() {
               <div class="screen-back">
                 <button class="btn ghost" data-action="back">Back</button>
               </div>
-              <div class="score-footer-mid" aria-hidden="true"></div>
+              <div class="score-footer-mid">
+                <button class="btn secondary" data-action="fill" type="button">Reset names</button>
+              </div>
               <div class="page-actions">
-                <div class="group">
-                  <button class="btn primary" data-action="build">Start tournament</button>
-                </div>
+                <button class="btn primary" data-action="build">Start tournament</button>
               </div>
             </div>
           </div>
@@ -595,6 +642,7 @@ function attachPageHandlers() {
   const startBtn = document.querySelector('[data-action="start"]');
   if (startBtn) startBtn.addEventListener('click', () => {
     state.pageIndex = 1;
+    state.setupStep = 0;
     render();
   });
 
@@ -602,6 +650,17 @@ function attachPageHandlers() {
   if (backBtn) backBtn.addEventListener('click', () => {
     if (Number.isInteger(state.activeFixtureIndex)) {
       closeFixture();
+      return;
+    }
+    if (state.pageIndex === 2) {
+      state.pageIndex = 1;
+      state.setupStep = getSetupSteps().length - 1;
+      render();
+      return;
+    }
+    if (state.pageIndex === 1 && state.setupStep > 0) {
+      state.setupStep -= 1;
+      render();
       return;
     }
     if (state.pageIndex > 0) {
@@ -618,8 +677,24 @@ function attachPageHandlers() {
 
   const setupNextBtn = document.querySelector('[data-action="setup-next"]');
   if (setupNextBtn) setupNextBtn.addEventListener('click', () => {
-    state.pageIndex = 2;
+    const lastStep = getSetupSteps().length - 1;
+    if (state.setupStep >= lastStep) {
+      state.pageIndex = 2;
+    } else {
+      state.pageIndex = 1;
+      state.setupStep += 1;
+    }
     render();
+  });
+
+  document.querySelectorAll('[data-setup-step]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const next = Number(btn.dataset.setupStep);
+      if (!Number.isInteger(next)) return;
+      state.pageIndex = 1;
+      state.setupStep = Math.max(0, Math.min(next, getSetupSteps().length - 1));
+      render();
+    });
   });
 
   const fillBtn = document.querySelector('[data-action="fill"]');
@@ -761,6 +836,7 @@ function buildTournament() {
   state.built = true;
   state.currentRoundIndex = 0;
   state.activeFixtureIndex = null;
+  state.setupStep = 0;
   state.pageIndex = 3;
   render();
 }
@@ -848,9 +924,10 @@ function scoreButtonsHtml(side, draft) {
 function updateTopbarCopy() {
   if (!els['topbar-copy']) return;
   if (!state.built) {
-    els['topbar-copy'].textContent = state.pageIndex === 2
-      ? 'Enter player names, then start the tournament.'
-      : 'Choose players, courts and points, then continue to names.';
+    const step = getSetupSteps()[state.setupStep];
+    els['topbar-copy'].textContent = step
+      ? step.title
+      : 'Set up the Americano tournament.';
     return;
   }
   if (Number.isInteger(state.activeFixtureIndex)) {
@@ -917,6 +994,31 @@ function baseRoundsForPlayers(numPlayers) {
 
 function roundsPerRotationFor(numPlayers, courts) {
   return buildAmericanoSchedule(numPlayers, 1, courts).length;
+}
+
+function estimateTournamentTime() {
+  const schedule = buildAmericanoSchedule(state.numPlayers, state.rotations, state.courts);
+  const minutesPerRound = 10 * (state.pointsPerGame / 16);
+  const totalMinutes = Math.max(1, Math.round(schedule.length * minutesPerRound));
+  const roundedMinutesPerRound = Math.max(1, Math.round(minutesPerRound));
+  const rounds = schedule.length;
+  const courtLabel = state.courts === 1 ? 'court' : 'courts';
+  const roundLabel = rounds === 1 ? 'round' : 'rounds';
+
+  return {
+    minutes: totalMinutes,
+    perGameLabel: formatMinutes(roundedMinutesPerRound),
+    totalLabel: formatMinutes(totalMinutes),
+    meta: `${formatMinutes(totalMinutes)} total, ${rounds} ${roundLabel} at ${state.pointsPerGame} points, ${state.courts} ${courtLabel}`,
+  };
+}
+
+function formatMinutes(minutes) {
+  if (minutes < 60) return `~${minutes} mins`;
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  if (!remainder) return `~${hours} hr${hours === 1 ? '' : 's'}`;
+  return `~${hours} hr ${remainder} mins`;
 }
 
 function rawToRound(entry) {
@@ -1036,8 +1138,10 @@ function validateScore(scoreA, scoreB, target) {
 function updateLayoutMode() {
   const pageMode = state.pageIndex === 0
     ? 'landing'
-    : state.pageIndex === 2
+    : state.pageIndex === 2 && !state.built
       ? 'names'
+      : state.pageIndex === 1 && !state.built
+      ? 'setup'
       : (state.pageIndex >= 3 && state.built
         ? (Number.isInteger(state.activeFixtureIndex) ? 'match' : 'overview')
         : 'setup');
