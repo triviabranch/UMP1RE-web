@@ -467,26 +467,25 @@ function renderSetupNamesPage() {
 
   return `
     <section class="screen active">
-      <div class="screen-head">
-        <div>
-          <h2>Names</h2>
-          <p>Name the players before the first round starts.</p>
-        </div>
-      </div>
-      <div class="content names-flow">
-        <div class="card names-panel">
-          <div class="card-head">
-            <div class="title">Player names</div>
-            <div class="meta">Edit all ${state.numPlayers}</div>
+      <div class="setup-modal-shell">
+        <div class="setup-modal-card">
+          <div class="setup-modal-head">
+            <div class="setup-kicker">Players</div>
+            <h2>Names</h2>
           </div>
-          <div class="card-body names-body">
-            <div class="player-grid">
-              ${players}
+          <div class="setup-modal-body names-body">
+            <div class="choice-group">
+              <div class="choice-label">Edit all ${state.numPlayers} players</div>
+              <div class="player-grid player-grid-two-col">
+                ${players}
+              </div>
+              <div class="names-reset-row">
+                <button class="btn secondary" data-action="fill" type="button">Reset names</button>
+              </div>
             </div>
           </div>
-          <div class="screen-actions names-actions">
+          <div class="setup-modal-actions names-actions">
             <button class="btn ghost" data-action="back">Back</button>
-            <button class="btn secondary" data-action="fill" type="button">Reset names</button>
             <button class="btn primary" data-action="build">Start tournament</button>
           </div>
         </div>
@@ -508,38 +507,40 @@ function renderScorePage(fixtureIndex) {
 
   return `
     <section class="screen active score-screen">
-      <div class="screen-head">
-        <div>
-          <h2>${roundLabel}</h2>
-          <p>Enter the final score and save the round.</p>
-        </div>
-      </div>
-      <div class="content round-grid">
-        <div class="card score-card">
-          <div class="card-body">
-            <div class="score-strip" aria-label="Current score">
-              <span class="score-strip-value a">${scoreA}</span>
-              <span class="score-strip-separator">-</span>
-              <span class="score-strip-value b">${scoreB}</span>
-            </div>
-            <div class="scoreboard">
-              <div class="score-side a">
-                <div class="head">
-                  <div class="tag">${escapeHtml(teamA)}</div>
+      <div class="play-shell">
+        <div class="play-card">
+          <div class="play-head">
+            <div class="play-kicker">Scoring</div>
+            <h2>${roundLabel}</h2>
+          </div>
+          <div class="play-body round-grid">
+            <div class="card score-card">
+              <div class="card-body">
+                <div class="score-strip" aria-label="Current score">
+                  <span class="score-strip-value a">${scoreA}</span>
+                  <span class="score-strip-separator">-</span>
+                  <span class="score-strip-value b">${scoreB}</span>
                 </div>
-                <div class="score-grid" style="--score-cols:${cols};" data-score-grid="a"></div>
-              </div>
-              <div class="score-side b">
-                <div class="head">
-                  <div class="tag">${escapeHtml(teamB)}</div>
+                <div class="scoreboard">
+                  <div class="score-side a">
+                    <div class="head">
+                      <div class="tag">${escapeHtml(teamA)}</div>
+                    </div>
+                    <div class="score-grid" style="--score-cols:${cols};" data-score-grid="a"></div>
+                  </div>
+                  <div class="score-side b">
+                    <div class="head">
+                      <div class="tag">${escapeHtml(teamB)}</div>
+                    </div>
+                    <div class="score-grid" style="--score-cols:${cols};" data-score-grid="b"></div>
+                  </div>
                 </div>
-                <div class="score-grid" style="--score-cols:${cols};" data-score-grid="b"></div>
               </div>
             </div>
-            <div class="screen-actions score-actions">
-              <button class="btn ghost" data-action="back">Back</button>
-              <button class="btn primary" data-action="save">Submit score</button>
-            </div>
+          </div>
+          <div class="screen-actions score-actions">
+            <button class="btn ghost" data-action="back">Back</button>
+            <button class="btn primary" data-action="save">Submit score</button>
           </div>
         </div>
       </div>
@@ -564,15 +565,17 @@ function renderRoundOverviewPage(roundIndex = 0) {
     return `
       <button class="schedule-item fixture-card ${saved ? 'completed' : ''}" type="button" data-open-fixture="${fixture.fixtureIndex}">
         <div class="fixture-card-court">Court ${fixture.courtIndex + 1}</div>
-        <div class="fixture-card-team team-a">${escapeHtml(teamA)}</div>
-        <div class="fixture-card-vs">vs</div>
-        <div class="fixture-card-team team-b">${escapeHtml(teamB)}</div>
-        ${saved ? `
-        <div class="fixture-card-score" aria-label="Saved score">
-          <span class="fixture-card-score-value a">${saved.scoreA}</span>
-          <span class="fixture-card-score-separator">:</span>
-          <span class="fixture-card-score-value b">${saved.scoreB}</span>
+        <div class="fixture-card-match">
+          <div class="fixture-card-team team-a">${escapeHtml(teamA)}</div>
+          <div class="fixture-card-vs">vs</div>
+          <div class="fixture-card-team team-b">${escapeHtml(teamB)}</div>
+          ${saved ? `
+          <div class="fixture-card-score-value a">${saved.scoreA}</div>
+          <div class="fixture-card-score-separator">:</div>
+          <div class="fixture-card-score-value b">${saved.scoreB}</div>
+          ` : ''}
         </div>
+        ${saved ? `
         <div class="fixture-card-status">Saved score</div>
         ` : `
         <div class="fixture-card-status">Open scoring</div>
@@ -583,28 +586,31 @@ function renderRoundOverviewPage(roundIndex = 0) {
 
   return `
     <section class="screen active round-screen">
-      <div class="screen-head">
-        <div>
-          <h2>${escapeHtml(roundLabel)}</h2>
+      <div class="play-shell">
+        <div class="play-card">
+          <div class="play-head">
+            <div class="play-kicker">Round</div>
+            <h2>${escapeHtml(roundLabel)}</h2>
+          </div>
+          <div class="play-body round-page">
+            <div class="schedule-list">
+              ${fixtureCards}
+            </div>
+            ${sit ? `
+            <div class="round-sitout-card">
+              <div class="round-sitout-label">Sitting out</div>
+              <div class="round-sitout-value">${escapeHtml(sit)}</div>
+            </div>
+            ` : ''}
+            <div class="round-leaderboard-cta">
+              <button class="btn secondary" data-action="leaderboard" type="button">Leaderboard</button>
+            </div>
+          </div>
+          <div class="screen-actions round-actions">
+            <button class="btn ghost" data-action="${isFirstRound ? 'back' : 'prev-round'}">${isFirstRound ? 'Back' : 'Previous round'}</button>
+            <button class="btn primary" data-action="next-round">Next round</button>
+          </div>
         </div>
-      </div>
-      <div class="content round-page">
-        <div class="schedule-list">
-          ${fixtureCards}
-        </div>
-        ${sit ? `
-        <div class="round-sitout-card">
-          <div class="round-sitout-label">Sitting out</div>
-          <div class="round-sitout-value">${escapeHtml(sit)}</div>
-        </div>
-        ` : ''}
-        <div class="round-leaderboard-cta">
-          <button class="btn secondary" data-action="leaderboard" type="button">Leaderboard</button>
-        </div>
-      </div>
-      <div class="screen-actions round-actions">
-        <button class="btn ghost" data-action="${isFirstRound ? 'back' : 'prev-round'}">${isFirstRound ? 'Back' : 'Previous round'}</button>
-        <button class="btn primary" data-action="next-round">Next round</button>
       </div>
     </section>
   `;
@@ -882,7 +888,15 @@ function attachPageHandlers() {
   if (leaderboardBtn) leaderboardBtn.addEventListener('click', openLeaderboard);
 
   const buildBtn = document.querySelector('[data-action="build"]');
-  if (buildBtn) buildBtn.addEventListener('click', buildTournament);
+  if (buildBtn) buildBtn.addEventListener('click', () => {
+    if (state.built && state.fixtures.length) {
+      state.pageIndex = 3;
+      state.activeFixtureIndex = null;
+      render();
+      return;
+    }
+    buildTournament();
+  });
 
   const setupNextBtn = document.querySelector('[data-action="setup-next"]');
   if (setupNextBtn) setupNextBtn.addEventListener('click', () => {
