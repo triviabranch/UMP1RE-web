@@ -620,15 +620,6 @@
     letter-spacing: 0.06em;
   }
 
-  .overall-estimate em {
-    display: block;
-    margin-top: 0.28rem;
-    color: var(--muted);
-    font-size: 0.68rem;
-    font-style: normal;
-    line-height: 1.4;
-  }
-
   .setup-modal-actions {
     flex: 0 0 auto;
     display: flex;
@@ -1409,6 +1400,10 @@
     gap: 0.65rem;
     min-height: 0;
     min-width: 0;
+  }
+
+  .round-page > .schedule-list {
+    grid-template-columns: repeat(var(--fixture-cols, 1), minmax(0, 1fr));
   }
 
   .round-page {
@@ -2574,10 +2569,6 @@
       font-size: 1.35rem;
     }
 
-    .overall-estimate em {
-      font-size: 0.64rem;
-    }
-
     .setup-modal-actions,
     .names-actions {
       padding: 0.52rem 0.55rem 0.55rem;
@@ -2776,11 +2767,6 @@
     .screen-actions .btn.primary,
     .round-actions .btn.primary {
       flex-basis: 100%;
-    }
-
-    .schedule-list {
-      grid-template-columns: 1fr;
-      gap: 0.45rem;
     }
 
     .round-sitout-card {

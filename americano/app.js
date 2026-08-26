@@ -446,7 +446,6 @@ function getSetupSteps() {
           <div class="overall-estimate">
             <span>Estimated overall Americano time:</span>
             <strong>${escapeHtml(estimate.totalLabel)}</strong>
-            <em>${escapeHtml(estimate.meta)}</em>
           </div>
         </div>
       `,
@@ -569,6 +568,7 @@ function renderRoundOverviewPage(roundIndex = 0) {
   const round = state.schedule[safeRoundIndex];
   const roundLabel = `Round ${safeRoundIndex + 1}/${state.schedule.length}`;
   const roundFixtures = state.fixtures.filter((fixture) => fixture.roundIndex === safeRoundIndex);
+  const fixtureCols = Math.max(1, Math.min(3, roundFixtures.length || 1));
   const sit = round.sitOut.length ? round.sitOut.map(i => state.players[i]).join(', ') : '';
   const isFirstRound = safeRoundIndex === 0;
 
@@ -608,7 +608,7 @@ function renderRoundOverviewPage(roundIndex = 0) {
             <h2>${escapeHtml(roundLabel)}</h2>
           </div>
           <div class="play-body round-page">
-            <div class="schedule-list">
+            <div class="schedule-list" style="--fixture-cols:${fixtureCols};">
               ${fixtureCards}
             </div>
             ${sit ? `
@@ -1240,21 +1240,12 @@ function estimateTournamentTime() {
   const minutesPerRound = gameMinutesForPoints(state.pointsPerGame);
   const totalMinutes = Math.max(1, Math.round(schedule.length * minutesPerRound));
   const roundedMinutesPerRound = Math.max(1, Math.round(minutesPerRound));
-  const rounds = schedule.length;
-  const effectiveCourts = maxCourtsInSchedule(schedule);
-  const courtLabel = effectiveCourts === 1 ? 'court' : 'courts';
-  const roundLabel = rounds === 1 ? 'round' : 'rounds';
 
   return {
     minutes: totalMinutes,
     perGameLabel: formatMinutes(roundedMinutesPerRound),
     totalLabel: formatMinutes(totalMinutes),
-    meta: `${formatMinutes(totalMinutes)} total, ${rounds} ${roundLabel} at ${state.pointsPerGame} points, up to ${effectiveCourts} ${courtLabel}`,
   };
-}
-
-function maxCourtsInSchedule(schedule) {
-  return Math.max(1, ...schedule.map(round => round.matches?.length || 0));
 }
 
 function gameMinutesForPoints(points) {
