@@ -1478,7 +1478,6 @@ function calcAmericanoStandings(numPlayers, fixtures, scores) {
   })).sort((a, b) => (
     b.points - a.points ||
     b.wins - a.wins ||
-    b.played - a.played ||
     a.playerIdx - b.playerIdx
   ));
 }
