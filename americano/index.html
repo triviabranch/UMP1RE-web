@@ -160,6 +160,12 @@
   .card-brand.is-landing .card-brand-logo {
     width: 75vw;
     max-width: 75vw;
+    min-width: 75vw;
+  }
+
+  .card-brand.is-landing {
+    width: 100%;
+    max-width: 100%;
   }
 
   .card-brand.is-landing .card-brand-title {
@@ -839,15 +845,17 @@
     -webkit-overflow-scrolling: touch;
   }
 
-  body[data-page-mode="names"] .names-reset-row {
-    display: flex;
-    justify-content: center;
+  .names-reset-row {
+    display: grid;
+    justify-items: center;
     margin-top: 0.7rem;
+    width: 100%;
   }
 
-  body[data-page-mode="names"] .names-reset-row .btn {
+  .names-reset-row .btn {
     width: 12rem;
     min-width: 12rem;
+    max-width: 12rem;
     flex: 0 0 12rem;
   }
 
@@ -1884,6 +1892,15 @@
     .scoreboard {
       grid-template-columns: 1fr;
     }
+
+    .round-page > .schedule-list {
+      grid-template-columns: 1fr;
+    }
+
+    .courts-step .choice-grid,
+    .rotations-step .choice-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
 
   @media (min-width: 700px) {
@@ -2777,6 +2794,15 @@
     .screen-actions .btn.primary,
     .round-actions .btn.primary {
       flex-basis: 100%;
+    }
+
+    .round-page > .schedule-list {
+      grid-template-columns: 1fr;
+    }
+
+    .courts-step .choice-grid,
+    .rotations-step .choice-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .round-sitout-card {

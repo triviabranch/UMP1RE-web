@@ -403,7 +403,7 @@ function getSetupSteps() {
       title: 'Courts',
       copy: 'Select how many courts can run at the same time.',
       html: `
-        <div class="choice-group">
+        <div class="choice-group courts-step">
           <div class="choice-grid">
             ${config.courtOptions.map(value => `
               <button class="choice-card ${state.courts === value ? 'active' : ''}" type="button" data-courts-choice="${value}">
